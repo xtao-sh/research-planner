@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "API server (Fastify)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace", "@rp/server"],
+      "port": 4000
+    },
+    {
+      "name": "Web (Vite)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace", "@rp/web", "--", "--port", "3060", "--host", "127.0.0.1"],
+      "port": 3060
+    }
+  ]
+}

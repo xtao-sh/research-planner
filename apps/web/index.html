@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
+    <meta name="theme-color" content="#1c1a16" />
+    <title>Research Planner</title>
+    <!-- Geist (UI sans, all sizes) + JetBrains Mono (numerics). CJK falls
+         through to PingFang SC via system stack. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('rp.theme');
+          var sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = saved === 'dark' || (saved == null && sys) ? 'dark' : 'light';
+          document.documentElement.dataset.theme = theme;
+        } catch (e) { /* localStorage may be blocked */ }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

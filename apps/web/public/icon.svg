@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Research Planner — app icon "Branching Path"
+  ················································
+  Direct adoption of icon 02 from the design canvas's icon study
+  (/tmp/planner-redesign/Research Planner Redesign.html → AppIconStudy).
+
+  Concept: a research task spawns parallel attempts. Three trial branches
+  diverge from a common decision point. One (active, green) is being
+  pursued; one (parked, orange) is on hold pending external input; one
+  (abandoned, dashed grey with an X) was tried and dropped. The trunk
+  below the fork is the work that fed all three trials.
+
+  Palette mirrors the design source verbatim:
+    ground:    #1c1a16  (warm dark — matches the rd-ink token)
+    trunk:     #f6f4ef  (paper)
+    abandoned: #928b7c  (dim grey, dashed)
+    parked:    oklch(0.65 0.16 50)   (orange, hollow node)
+    active:    oklch(0.72 0.18 145)  (green, solid node)
+
+  120 viewBox is the design's native canvas; the explicit
+  width/height of 1024 makes browsers + native rasterizers produce a
+  crisp 1024² icon while the geometry remains source-fidelity.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 120 120"
+     width="1024" height="1024"
+     role="img" aria-label="Research Planner">
+  <!-- Squircle ground -->
+  <rect x="6" y="6" width="108" height="108" rx="26" fill="#1c1a16"/>
+
+  <!-- Trunk (the foundation work below the fork) -->
+  <path d="M 60 100 L 60 70" stroke="#f6f4ef" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Abandoned branch — dashed grey, terminates in an X -->
+  <path d="M 60 70 L 32 50" stroke="#928b7c" stroke-width="3" stroke-dasharray="3 4" stroke-linecap="round"/>
+  <line x1="28" y1="46" x2="36" y2="54" stroke="#928b7c" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="36" y1="46" x2="28" y2="54" stroke="#928b7c" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- Parked branch — orange, hollow circle node (waiting on something) -->
+  <path d="M 60 70 L 88 60" stroke="oklch(0.65 0.16 50)" stroke-width="3.5" stroke-linecap="round"/>
+  <circle cx="92" cy="59" r="5" fill="none" stroke="oklch(0.65 0.16 50)" stroke-width="2.5"/>
+
+  <!-- Active branch — green, brightest stroke + solid node (the chosen one) -->
+  <path d="M 60 70 L 60 30" stroke="oklch(0.72 0.18 145)" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="60" cy="26" r="7" fill="oklch(0.72 0.18 145)"/>
+
+  <!-- Base white dot — the project's starting point -->
+  <circle cx="60" cy="100" r="4.5" fill="#f6f4ef"/>
+</svg>

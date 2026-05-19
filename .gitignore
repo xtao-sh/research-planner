@@ -1,0 +1,63 @@
+# Node
+node_modules/
+dist/
+.turbo/
+.parcel-cache/
+.cache/
+*.log
+
+# Local persistence store
+.data/
+
+# Prisma local SQLite (any depth, in case prisma generates a nested prisma/)
+apps/server/prisma/dev.db
+apps/server/prisma/dev.db-journal
+apps/server/prisma/*.db
+apps/server/prisma/*.db-journal
+apps/server/prisma/**/*.db
+apps/server/prisma/**/*.db-journal
+# Vitest's per-file ephemeral SQLite DBs (apps/server/test-<id>.db).
+# Should be torn down between runs but occasionally leak; never commit them.
+apps/server/test-*.db
+apps/server/test-*.db-journal
+
+# Claude scratch dirs (worktrees, agent state)
+.claude/worktrees/
+
+# tsc -b incremental build artifacts. Never commit these — stray .js
+# shadow files break Vite resolution (it picks the compiled .js next to
+# the .tsx, runs stale code, and HMR throws "Could not Fast Refresh").
+**/tsconfig.tsbuildinfo
+apps/web/src/**/*.js
+apps/server/src/**/*.js
+packages/*/src/**/*.js
+
+# Env
+.env
+.env.local
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+
+# Build outputs
+coverage/
+build/
+
+# Tauri sidecar artifacts (generated on every build; the Bun-compiled
+# server is ~60 MB and the seeded SQLite is rebuilt from prisma/dev.db).
+apps/server/dist-bin/
+apps/web/src-tauri/binaries/
+apps/web/src-tauri/data/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+.playwright-mcp/
+
+# macOS
+.DS_Store

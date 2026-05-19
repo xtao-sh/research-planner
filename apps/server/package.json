@@ -1,0 +1,44 @@
+{
+  "name": "@rp/server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/app.js",
+  "types": "dist/app.d.ts",
+  "scripts": {
+    "dev": "ts-node -r tsconfig-paths/register src/app.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/app.js",
+    "lint": "echo 'no lint configured'",
+    "test": "prisma generate && vitest run",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "db:seed": "ts-node -r tsconfig-paths/register src/seed.ts",
+    "postgres:push": "DATABASE_URL=postgresql://rp:rp_dev@localhost:5432/research_planner prisma db push --schema prisma/schema.postgres.prisma --accept-data-loss",
+    "postgres:generate": "DATABASE_URL=postgresql://rp:rp_dev@localhost:5432/research_planner prisma generate --schema prisma/schema.postgres.prisma",
+    "postgres:cleanup": "DATABASE_URL=postgresql://rp:rp_dev@localhost:5432/research_planner PG_BASE_URL=postgresql://rp:rp_dev@localhost:5432/research_planner ts-node -r tsconfig-paths/register scripts/cleanup_test_schemas.ts",
+    "test:postgres": "npm run postgres:generate && PG_BASE_URL=postgresql://rp:rp_dev@localhost:5432/research_planner DATABASE_URL=postgresql://rp:rp_dev@localhost:5432/research_planner vitest run",
+    "schemas:check": "ts-node scripts/check_schemas_match.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^9.4.0",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/websocket": "^10.0.1",
+    "@prisma/client": "^6.19.3",
+    "@rp/scheduler": "file:../../packages/scheduler",
+    "@rp/shared": "file:../../packages/shared",
+    "bcryptjs": "^3.0.3",
+    "fastify": "^4.27.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/ws": "^8.18.1",
+    "prisma": "^6.19.3",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.9",
+    "ws": "^8.20.0"
+  }
+}

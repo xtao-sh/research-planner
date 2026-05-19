@@ -1,0 +1,29 @@
+{
+  "name": "research-planner-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A planner for projects where progress matters more than deadlines — built for research and other uncertain-duration work.",
+  "license": "MIT",
+  "author": "Tao (@xtao-sh)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xtao-sh/research-planner"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @rp/web",
+    "dev:server": "npm run dev --workspace @rp/server",
+    "dev": "bash scripts/dev.sh",
+    "build": "npm run -ws build",
+    "lint": "npm run -ws lint",
+    "test": "npm run -ws test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.9.1",
+    "pnpm": "^9.15.9"
+  }
+}

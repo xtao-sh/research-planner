@@ -1,0 +1,21 @@
+{
+  "name": "@rp/scheduler",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo 'no lint configured'",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@rp/shared": "file:../shared"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.9"
+  }
+}

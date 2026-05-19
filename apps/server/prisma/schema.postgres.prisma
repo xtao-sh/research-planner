@@ -1,0 +1,257 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                    String    @id
+  email                 String    @unique
+  passwordHash          String
+  name                  String?
+  createdAt             DateTime  @default(now())
+  defaultWorkspaceId    String?
+
+  defaultWorkspace      Workspace?        @relation("UserDefaultWorkspace", fields: [defaultWorkspaceId], references: [id], onDelete: SetNull)
+  sessions              Session[]
+  memberships           WorkspaceMember[]
+  events                Event[]
+  invitesSent           Invite[]          @relation("InviteBy")
+  invitesAccepted       Invite[]          @relation("InviteAccept")
+  notes                 Note[]
+}
+
+model Session {
+  id         String   @id           // opaque token (also the cookie value)
+  userId     String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Workspace {
+  id          String    @id
+  name        String
+  createdAt   DateTime  @default(now())
+
+  members         WorkspaceMember[]
+  projects        Project[]
+  defaultForUsers User[]            @relation("UserDefaultWorkspace")
+  events          Event[]
+  calendar        WorkingCalendar?
+  invites         Invite[]
+  notes           Note[]
+}
+
+model Invite {
+  id           String    @id
+  workspaceId  String
+  email        String
+  role         String    // 'admin' | 'editor' | 'commenter' | 'viewer'
+  token        String    @unique
+  invitedById  String?
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  acceptedById String?
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy    User?     @relation("InviteBy",     fields: [invitedById],  references: [id], onDelete: SetNull)
+  acceptedBy   User?     @relation("InviteAccept", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([email])
+  @@unique([workspaceId, email, acceptedAt])
+}
+
+model WorkingCalendar {
+  id          String   @id
+  workspaceId String   @unique
+  // JSON-encoded array of 7 strings/null. Each non-null entry is "HH:MM-HH:MM"
+  // (UTC). See docs in calendar.ts for the defaults.
+  weeklyHours String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  holidays    Holiday[]
+}
+
+model Holiday {
+  id         String   @id
+  calendarId String
+  date       String   // "YYYY-MM-DD" (UTC day)
+  name       String
+
+  calendar   WorkingCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  @@unique([calendarId, date])
+  @@index([calendarId])
+}
+
+model WorkspaceMember {
+  id          String    @id
+  workspaceId String
+  userId      String
+  role        String    // 'admin' | 'member'
+  createdAt   DateTime  @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model Project {
+  id          String    @id
+  name        String
+  description String?
+  type        String    @default("other")
+  mode        String    @default("progress")
+  createdAt   DateTime
+  updatedAt   DateTime
+  startDate   DateTime?
+  workspaceId String
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  tasks       Task[]
+  deps        Dependency[]
+  milestones  Milestone[]
+  scenarios   Scenario[]
+  events      Event[]
+  notes       Note[]
+
+  @@index([workspaceId])
+}
+
+model Task {
+  id            String     @id
+  projectId     String
+  title         String
+  type          String
+  status        String
+  // estimate flattened
+  estimateO     Int
+  estimateM     Int
+  estimateP     Int
+  size          String     @default("m")
+  intensity   Int?      // 1..5 cognitive load (nullable; size-derived fallback when null)
+  confidence    Float?
+  priority      Int
+  labels        String?    // JSON-encoded string array, or null
+  assignee      String?
+  startPlanned  DateTime?
+  endPlanned    DateTime?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  focusedAt     DateTime?
+  blockedAt     DateTime?
+  dueSoft       DateTime?
+  dueHard       DateTime?
+  milestoneId   String?
+  parentTaskId  String?
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  project       Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestone     Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  parentTask    Task?      @relation("TaskParent", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  children      Task[]     @relation("TaskParent")
+  depsFrom      Dependency[] @relation("DepFrom")
+  depsTo        Dependency[] @relation("DepTo")
+
+  @@index([projectId])
+  @@index([parentTaskId])
+  @@index([projectId, status])
+  @@index([projectId, parentTaskId])
+}
+
+model Dependency {
+  id          String  @id
+  projectId   String
+  fromTaskId  String
+  toTaskId    String
+  type        String  // 'FS' | 'SS' | 'FF' | 'SF' (validated in Zod)
+  lag         Int     @default(0) // hours; may be negative
+
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fromTask    Task    @relation("DepFrom", fields: [fromTaskId], references: [id], onDelete: Cascade)
+  toTask      Task    @relation("DepTo",   fields: [toTaskId],   references: [id], onDelete: Cascade)
+
+  @@unique([fromTaskId, toTaskId])
+  @@index([projectId])
+  @@index([toTaskId])
+}
+
+model Milestone {
+  id         String    @id
+  projectId  String
+  title      String
+  criteria   String?
+  startDate  DateTime?
+  dueSoft    DateTime?
+  dueHard    DateTime?
+
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks      Task[]
+
+  @@index([projectId])
+}
+
+model Scenario {
+  id            String   @id
+  projectId     String
+  name          String
+  durationMode  String
+  createdAt     DateTime
+  snapshot      String   // JSON-encoded ScheduleResult
+
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model Event {
+  id          String   @id
+  workspaceId String
+  projectId   String?
+  userId      String?   // nullable: user may have been deleted; event survives
+  type        String    // typed in TS via shared enum
+  payload     String    // JSON-encoded event-specific data
+  createdAt   DateTime  @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([projectId, createdAt])
+}
+
+model Note {
+  id           String    @id
+  workspaceId  String
+  projectId    String?
+  createdById  String
+  body         String
+  tags         String    @default("[]")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project      Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdBy    User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, projectId])
+  @@index([createdById, workspaceId])
+}

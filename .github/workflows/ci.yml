@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs of the same PR/branch — we don't need them stacking.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck-and-test:
+    name: Typecheck + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      - name: Generate Prisma client
+        working-directory: apps/server
+        run: npx prisma generate
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Apply Prisma migrations (for server tests)
+        working-directory: apps/server
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Typecheck web
+        run: npx tsc -b apps/web
+
+      - name: Typecheck server
+        run: npx tsc -b apps/server
+
+      - name: Web unit tests (Vitest)
+        run: npm run test --workspace=apps/web
+
+      - name: Server integration tests (Vitest + Prisma)
+        run: npm run test --workspace=apps/server
+        env:
+          # Each test gets its own ephemeral SQLite file via the
+          # in-tree fixture loader; nothing here needs to persist.
+          NODE_ENV: test
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: typecheck-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      - name: Generate Prisma client
+        working-directory: apps/server
+        run: npx prisma generate
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Build web bundle
+        run: npm run build --workspace=apps/web
+
+      - name: Build server bundle
+        run: npm run build --workspace=apps/server

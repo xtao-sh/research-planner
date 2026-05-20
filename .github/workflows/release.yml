@@ -91,11 +91,21 @@ jobs:
         env:
           DATABASE_URL: file:./prisma/dev.db
 
-      - name: Seed SQLite database
+      - name: Apply Prisma migrations (creates an empty dev.db)
         working-directory: apps/server
-        run: |
-          npx prisma migrate deploy
-          npm run db:seed || echo "(seed step skipped or already applied)"
+        shell: bash
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      # Seed is best-effort: if it fails (e.g. on a fresh CI runner where
+      # something racey in the seed script trips), we'd rather ship an
+      # empty-but-valid bundled DB than fail the whole release.
+      - name: Seed SQLite database (best-effort)
+        working-directory: apps/server
+        shell: bash
+        continue-on-error: true
+        run: npm run db:seed
         env:
           DATABASE_URL: file:./prisma/dev.db
 

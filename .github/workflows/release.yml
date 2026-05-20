@@ -1,0 +1,139 @@
+name: Release builds
+
+# Build cross-platform Tauri bundles (.dmg / .msi / .AppImage) and attach
+# them to the GitHub Release for the pushed tag. Also runnable manually
+# via the Actions tab — workflow_dispatch lets you (re)build for an
+# existing tag.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build and upload to'
+        required: true
+        default: 'v0.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-14            # Apple Silicon
+            target_triple: aarch64-apple-darwin
+            bun_target: bun-darwin-arm64
+            bundle_pattern: '**/*.dmg'
+            asset_suffix: macos-aarch64.dmg
+          - platform: windows-latest
+            target_triple: x86_64-pc-windows-msvc
+            bun_target: bun-windows-x64
+            bundle_pattern: '**/*.msi'
+            asset_suffix: windows-x64.msi
+          - platform: ubuntu-22.04
+            target_triple: x86_64-unknown-linux-gnu
+            bun_target: bun-linux-x64
+            bundle_pattern: '**/*.AppImage'
+            asset_suffix: linux-x64.AppImage
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 45
+    env:
+      TARGET_TRIPLE: ${{ matrix.target_triple }}
+      BUN_TARGET: ${{ matrix.bun_target }}
+    steps:
+      - name: Checkout (tag from input or pushed tag)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust target dir
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/web/src-tauri
+
+      - name: Linux system dependencies for Tauri
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            patchelf
+
+      - name: Install npm dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      - name: Generate Prisma client
+        working-directory: apps/server
+        run: npx prisma generate
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Seed SQLite database
+        working-directory: apps/server
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed || echo "(seed step skipped or already applied)"
+        env:
+          DATABASE_URL: file:./prisma/dev.db
+
+      - name: Build Bun sidecar (cross-platform)
+        shell: bash
+        run: bash scripts/build-tauri-sidecar.sh
+
+      - name: Tauri build
+        working-directory: apps/web
+        shell: bash
+        run: npm run tauri:build
+
+      - name: Locate produced bundle
+        id: locate
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Find the bundle file for this platform.
+          BUNDLE=$(find apps/web/src-tauri/target/release/bundle -type f -name "${{ matrix.bundle_pattern }}" 2>/dev/null | head -n 1)
+          if [ -z "$BUNDLE" ]; then
+            echo "No bundle matching ${{ matrix.bundle_pattern }} found." >&2
+            find apps/web/src-tauri/target/release/bundle -type f | head -50
+            exit 1
+          fi
+          # Normalise the asset name.
+          TAG="${{ inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          DEST="Research-Planner-${VERSION}-${{ matrix.asset_suffix }}"
+          cp "$BUNDLE" "/tmp/$DEST"
+          echo "asset=/tmp/$DEST" >> "$GITHUB_OUTPUT"
+          echo "name=$DEST" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          gh release upload "$TAG" "${{ steps.locate.outputs.asset }}" \
+            --repo ${{ github.repository }} \
+            --clobber

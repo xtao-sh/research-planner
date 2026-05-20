@@ -27,17 +27,17 @@ jobs:
           - platform: macos-14            # Apple Silicon
             target_triple: aarch64-apple-darwin
             bun_target: bun-darwin-arm64
-            bundle_pattern: '**/*.dmg'
+            bundle_pattern: '*.dmg'
             asset_suffix: macos-aarch64.dmg
           - platform: windows-latest
             target_triple: x86_64-pc-windows-msvc
             bun_target: bun-windows-x64
-            bundle_pattern: '**/*.msi'
-            asset_suffix: windows-x64.msi
+            bundle_pattern: '*-setup.exe'   # Tauri NSIS installer
+            asset_suffix: windows-x64-setup.exe
           - platform: ubuntu-22.04
             target_triple: x86_64-unknown-linux-gnu
             bun_target: bun-linux-x64
-            bundle_pattern: '**/*.AppImage'
+            bundle_pattern: '*.AppImage'
             asset_suffix: linux-x64.AppImage
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 45
@@ -127,9 +127,11 @@ jobs:
           BUNDLE=$(find apps/web/src-tauri/target/release/bundle -type f -name "${{ matrix.bundle_pattern }}" 2>/dev/null | head -n 1)
           if [ -z "$BUNDLE" ]; then
             echo "No bundle matching ${{ matrix.bundle_pattern }} found." >&2
-            find apps/web/src-tauri/target/release/bundle -type f | head -50
+            echo "Tree of bundle dir:" >&2
+            find apps/web/src-tauri/target/release/bundle -maxdepth 3 -type f >&2 || true
             exit 1
           fi
+          echo "Found bundle: $BUNDLE" >&2
           # Normalise the asset name.
           TAG="${{ inputs.tag || github.ref_name }}"
           VERSION="${TAG#v}"

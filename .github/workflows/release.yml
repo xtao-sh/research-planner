@@ -37,8 +37,8 @@ jobs:
           - platform: ubuntu-22.04
             target_triple: x86_64-unknown-linux-gnu
             bun_target: bun-linux-x64
-            bundle_pattern: '*.AppImage'
-            asset_suffix: linux-x64.AppImage
+            bundle_pattern: '*.deb'
+            asset_suffix: linux-x64.deb
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 45
     env:

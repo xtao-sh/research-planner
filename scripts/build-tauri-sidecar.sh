@@ -58,16 +58,19 @@ cp "$OUT_BIN" "$SIDECAR_DST"
 chmod +x "$SIDECAR_DST" 2>/dev/null || true
 
 echo "==> Staging seeded SQLite database at $SEED_DB_DST"
+echo "    SEED_DB_SRC=$SEED_DB_SRC"
+echo "    Source exists? $([ -f "$SEED_DB_SRC" ] && echo yes || echo no)"
+echo "    Source size: $(wc -c < "$SEED_DB_SRC" 2>/dev/null || echo 'n/a')"
 mkdir -p "$TAURI_DIR/data"
 if [ ! -f "$SEED_DB_SRC" ]; then
-  # In CI we'd rather ship an empty bundle than fail the whole release. If
-  # the migrated dev.db is missing (because seed bailed before migrate ran),
-  # synthesise a 0-byte placeholder. Tauri's resource bundling needs the
-  # file to exist; the runtime will overwrite this on first launch anyway
-  # via the app's own first-run copy.
+  # In CI we'd rather ship an empty bundle than fail the whole release.
+  # Tauri's resource bundling needs the file to exist; the runtime
+  # overwrites this on first launch from the app's own first-run copy.
   echo "WARN: seed DB not found at $SEED_DB_SRC — staging empty placeholder" >&2
+  mkdir -p "$(dirname "$SEED_DB_SRC")"
   : > "$SEED_DB_SRC"
 fi
 cp "$SEED_DB_SRC" "$SEED_DB_DST"
+echo "    Copied. Destination size: $(wc -c < "$SEED_DB_DST")"
 
 echo "==> Done. Build the bundle with:  cd apps/web && npm run tauri:build"

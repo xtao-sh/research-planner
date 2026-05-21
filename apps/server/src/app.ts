@@ -2716,6 +2716,9 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
           dueHard: true,
           timeframeBucket: true,
           timeframeAnchor: true,
+          startedAt: true,
+          blockedAt: true,
+          focusedAt: true,
         },
       }),
       prisma.note.findMany({
@@ -2759,6 +2762,9 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         timeframeBucket:
           (t.timeframeBucket as Task['timeframeBucket']) ?? undefined,
         timeframeAnchor: isoOrUndef(t.timeframeAnchor ?? null),
+        startedAt: isoOrUndef(t.startedAt),
+        blockedAt: isoOrUndef(t.blockedAt),
+        focusedAt: isoOrUndef(t.focusedAt),
       })),
       notes: noteRows.map((n) => ({
         id: n.id,

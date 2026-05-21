@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import type { Project, SearchResults } from '@rp/shared';
+import type { Project, SearchResults, Task } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
 import { searchAll } from '../../api/search';
 import { SkeletonList } from '../../components/Skeleton';
 import { TimeframeBadge } from '../tasks/TimeframeBadge';
+import { StaleBadge } from '../tasks/StaleBadge';
 
 /**
  * Splits a #hashtag-aware string into React nodes (tags become
@@ -219,8 +220,10 @@ export function SearchPage() {
         )}
 
         {trimmed && !loading && !hasResults && (
-          <div className="rd-empty-state rd-empty-state-sm">
-            <p>{t('search.noMatches')}</p>
+          <div className="rd-empty-state">
+            <span className="rd-icon" aria-hidden="true">🔍</span>
+            <h3>{t('search.noMatches')}</h3>
+            <p>{t('search.noMatchesHint')}</p>
           </div>
         )}
 
@@ -259,7 +262,9 @@ export function SearchPage() {
                             <span className="rd-sep">·</span>
                           </>
                         )}
-                        <span className="rd-size-chip">{task.size}</span>
+                        <span className="rd-size-chip">
+                          {(task.size ?? 'm').toUpperCase()}
+                        </span>
                         {task.timeframeBucket && (
                           <>
                             <span className="rd-sep">·</span>
@@ -269,6 +274,21 @@ export function SearchPage() {
                               variant="compact"
                             />
                           </>
+                        )}
+                        {/* StaleBadge renders nothing for fresh tasks, so
+                            it's always safe to include. Search benefits
+                            especially from stale signals — cross-project
+                            queries are when stale tasks hide. */}
+                        <StaleBadge task={task as Task} />
+                        {task.focusedAt && (
+                          <span
+                            className="rd-search-pin"
+                            aria-label={t('task.todayFocus')}
+                            title={t('task.todayFocus')}
+                            style={{ color: 'var(--accent)' }}
+                          >
+                            ★
+                          </span>
                         )}
                       </div>
                     </div>

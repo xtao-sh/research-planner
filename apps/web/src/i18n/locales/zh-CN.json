@@ -706,6 +706,7 @@
     "tagFilter": "🏷️ 标签筛选",
     "tagFilterCount": "🏷️ 标签筛选 ({{count}})",
     "noMatches": "无匹配结果",
+    "noMatchesHint": "试试更短的关键词，或确认目标项目／任务在当前工作区里。",
     "startHint": "输入关键词开始搜索",
     "startTyping": "开始输入以全局搜索。",
     "groupTasks": "任务",

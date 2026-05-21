@@ -710,6 +710,7 @@
     "tagFilter": "🏷️ Tag filter",
     "tagFilterCount": "🏷️ Tag filter ({{count}})",
     "noMatches": "No matches",
+    "noMatchesHint": "Try a shorter keyword, or check that the project / task is in this workspace.",
     "startHint": "Enter keywords to start searching",
     "startTyping": "Type to search across everything.",
     "groupTasks": "Tasks",

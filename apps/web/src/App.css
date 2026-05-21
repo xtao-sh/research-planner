@@ -7188,6 +7188,25 @@ body {
 @media (hover: none) {
   /* Touch devices: surface the drag handle that's hover-only on desktop. */
   .rd-flow-card .rd-drag-handle { opacity: 0.5; }
+
+  /* WCAG / Apple HIG say interactive targets should be at least 44×44 px
+     on touch. On mouse-pointer devices these can stay tighter — only
+     widen for `hover: none`. Sub-44 controls get padding bumped rather
+     than dimensions changed so visual layout barely shifts. */
+  .rd-task-row .rd-pin,
+  .rd-tf-chip,
+  .rd-tab,
+  .rd-icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+    /* Center the smaller glyph/text inside the larger hit area. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rd-tf-chip {
+    padding: 8px 12px;
+  }
 }
 
 /* ---------- Timeframe bucket: picker chips + read-only badge ----------- */
@@ -7259,3 +7278,51 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .rd-tf-countdown.is-past { color: var(--rd-st-blocked); }
+
+/* ---------- /now: collapse-on-mobile wrapper for By Timeframe ---------- */
+/* Desktop: render flat — open is forced via the `open` attribute on the
+   <details> element, and we hide the summary chevron + style the text
+   to look like the existing section eyebrow. */
+.rd-now-tf-wrap > summary.rd-now-tf-summary {
+  list-style: none;
+  display: block;
+  margin-top: 12px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rd-ink-3);
+  cursor: default;
+  user-select: none;
+}
+.rd-now-tf-wrap > summary.rd-now-tf-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Mobile: turn the summary into a real disclosure header — bigger hit
+   target, chevron, tap to expand/collapse. Defaults to closed so the
+   bucket sections don't dominate above-the-fold on narrow viewports;
+   the user opens them deliberately. */
+@media (max-width: 720px) {
+  .rd-now-tf-wrap > summary.rd-now-tf-summary {
+    cursor: pointer;
+    padding: 12px 14px;
+    margin-top: 6px;
+    border-top: 1px solid var(--rd-line);
+    border-bottom: 1px solid var(--rd-line);
+    font-size: 12.5px;
+    color: var(--rd-ink-2);
+    position: relative;
+  }
+  .rd-now-tf-wrap > summary.rd-now-tf-summary::after {
+    content: '▾';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: var(--rd-ink-3);
+  }
+  .rd-now-tf-wrap[open] > summary.rd-now-tf-summary::after {
+    content: '▴';
+  }
+}

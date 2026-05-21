@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { Note, Project, Task, TimeframeBucket } from '@rp/shared';
@@ -14,6 +14,7 @@ import { useIntensityBudget } from '../settings/settingsStore';
 import { useToast } from '../../components/Toast';
 import { computeTimeframeStatus, groupTasksByTimeframe } from '../tasks/timeframe';
 import { TimeframeBadge } from '../tasks/TimeframeBadge';
+import { StaleBadge } from '../tasks/StaleBadge';
 import {
   briefingLastSeenKey,
   countWeekPastWindow,
@@ -146,39 +147,53 @@ export function NowPage() {
   const blockedSingleProject =
     new Set(blockedTasks.map((x) => x.project.id)).size <= 1;
 
-  function handleOpen(projectId: string) {
-    navigate(`/projects/${projectId}`);
-  }
+  // Stable identities — every NowTaskRow gets these as props and would
+  // otherwise rebind on every WS-event tick. Wrapped here so any future
+  // React.memo on NowTaskRow actually skips re-renders when only the
+  // tasks array reference changed (with no row data churn).
+  const handleOpen = useCallback(
+    (projectId: string) => navigate(`/projects/${projectId}`),
+    [navigate]
+  );
 
-  async function handleToggleFocus(task: Task) {
-    try {
-      await setTaskFocus(task.id, !task.focusedAt);
-      await refreshProjectTasks(task.projectId);
-    } catch (err) {
-      toast.push(
-        err instanceof Error ? err.message : t('now.errorToggleFocus'),
-        { kind: 'error' },
-      );
-    }
-  }
+  const handleToggleFocus = useCallback(
+    async (task: Task) => {
+      try {
+        await setTaskFocus(task.id, !task.focusedAt);
+        await refreshProjectTasks(task.projectId);
+      } catch (err) {
+        toast.push(
+          err instanceof Error ? err.message : t('now.errorToggleFocus'),
+          { kind: 'error' },
+        );
+      }
+    },
+    [refreshProjectTasks, toast, t]
+  );
 
-  async function handleApplyPatch(taskId: string, patch: Partial<Task>) {
-    try {
-      await sendJson(`/api/tasks/${taskId}`, {
-        method: 'PUT',
-        body: JSON.stringify(patch),
-      });
-      // The WS event tick will refresh, but kick the project tasks too so the
-      // /now derived lists reflect immediately.
-      const tx = allTasks.find((x) => x.task.id === taskId);
-      if (tx) await refreshProjectTasks(tx.project.id);
-    } catch (err) {
-      toast.push(
-        err instanceof Error ? err.message : t('now.errorApplyPatch'),
-        { kind: 'error' },
-      );
-    }
-  }
+  // handleApplyPatch closes over allTasks for the same-project refresh
+  // shortcut. The dep here is `allTasks` rather than `projectTasks` so
+  // the closure has the latest tasks-with-projects mapping.
+  const handleApplyPatch = useCallback(
+    async (taskId: string, patch: Partial<Task>) => {
+      try {
+        await sendJson(`/api/tasks/${taskId}`, {
+          method: 'PUT',
+          body: JSON.stringify(patch),
+        });
+        // The WS event tick will refresh, but kick the project tasks too so the
+        // /now derived lists reflect immediately.
+        const tx = allTasks.find((x) => x.task.id === taskId);
+        if (tx) await refreshProjectTasks(tx.project.id);
+      } catch (err) {
+        toast.push(
+          err instanceof Error ? err.message : t('now.errorApplyPatch'),
+          { kind: 'error' },
+        );
+      }
+    },
+    [allTasks, refreshProjectTasks, toast, t]
+  );
 
   // Greeting based on local time. Adopts the redesign's "Good morning."
   // pattern with the date appended in muted text.
@@ -366,13 +381,15 @@ export function NowPage() {
             )}
 
             {hasAnyTimeframed && (
-              <>
-                <div
-                  className="rd-section-eyebrow"
-                  style={{ marginTop: 12 }}
-                >
+              // <details> wrapper: on desktop CSS forces it open + hides the
+              // summary's chevron, so the bucket sections render flat as
+              // before. On mobile (≤720px) the summary becomes a tappable
+              // disclosure header so the 5 bucket sections collapse behind
+              // one toggle — keeps above-the-fold real estate manageable.
+              <details className="rd-now-tf-wrap" open>
+                <summary className="rd-now-tf-summary">
                   {t('now.byTimeframeEyebrow')}
-                </div>
+                </summary>
                 {TIMEFRAME_BUCKETS.map((bucket) => {
                   const list = timeframeGroups[bucket];
                   if (list.length === 0) return null;
@@ -417,7 +434,7 @@ export function NowPage() {
                     </NowSection>
                   );
                 })}
-              </>
+              </details>
             )}
           </div>
 
@@ -1021,14 +1038,9 @@ function NowTaskRow({
   const isFocused = Boolean(task.focusedAt);
   const intensity = deriveIntensity(task);
 
-  const startedAt = task.startedAt;
-  const daysAgo =
-    startedAt
-      ? Math.max(
-          0,
-          Math.floor((Date.now() - new Date(startedAt).getTime()) / 86400000)
-        )
-      : null;
+  // (Previously computed `daysAgo` locally for the rightmost stale-text
+  // slot — removed in Round 15. StaleBadge covers both doing- and blocked-
+  // stale uniformly now.)
 
   const statusLabels: Record<Task['status'], string> = {
     todo: t('task.statusLabels.todo'),
@@ -1113,7 +1125,9 @@ function NowTaskRow({
               <span className="rd-sep">·</span>
             </>
           )}
-          <span className="rd-size-chip">{task.size}</span>
+          <span className="rd-size-chip">
+            {(task.size ?? 'm').toUpperCase()}
+          </span>
           <span className="rd-intensity" data-level={intensity}>
             <span className="rd-bar" />
             <span className="rd-bar" />
@@ -1139,16 +1153,13 @@ function NowTaskRow({
               m: task.estimate.m,
             })}
           </span>
+          {/* StaleBadge covers both doing-stale AND blocked-stale states.
+              Replaces the previous doing-only rightmost text — now NowTaskRow
+              matches the other surfaces (Kanban, TaskListPanel, SearchPage). */}
+          <StaleBadge task={task} />
         </div>
       </div>
-
-      {daysAgo !== null && task.status === 'doing' && daysAgo >= 7 ? (
-        <span className="rd-stale">
-          {t('now.startedDaysAgo', { n: daysAgo })}
-        </span>
-      ) : (
-        <span aria-hidden="true" />
-      )}
+      <span aria-hidden="true" />
     </div>
   );
 }

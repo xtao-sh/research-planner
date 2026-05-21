@@ -1,13 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { Project, ProjectType, TimeframeBucket } from '@rp/shared';
+import type { Project, ProjectType, Task, TimeframeBucket } from '@rp/shared';
 import { TIMEFRAME_BUCKETS } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
 import { PROJECT_TYPES, getProjectTypeMeta } from './projectTypes';
 import { getStaleLevel } from './staleIndicator';
 
 type Filter = 'all' | ProjectType;
+
+// Module-scoped empty-array sentinel — passed as the `tasks` prop to
+// ProjectCard for projects whose tasks haven't been fetched yet. Using
+// the same reference across renders preserves prop identity, so any
+// future React.memo on ProjectCard can actually skip work.
+const EMPTY_TASKS: Task[] = [];
 
 export function ProjectsPage() {
   const { t } = useTranslation();
@@ -127,7 +133,7 @@ export function ProjectsPage() {
                 <ProjectCard
                   key={p.id}
                   project={p}
-                  tasks={projectTasks[p.id] || []}
+                  tasks={projectTasks[p.id] || EMPTY_TASKS}
                   onOpen={() => navigate(`/projects/${p.id}`)}
                 />
               ))}

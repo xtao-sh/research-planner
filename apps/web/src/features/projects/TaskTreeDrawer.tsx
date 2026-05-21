@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/core';
 import type { Task } from '@rp/shared';
 import { deriveIntensity } from '../../shared/intensity';
+import { TimeframeBadge } from '../tasks/TimeframeBadge';
 
 interface TaskTreeDrawerProps {
   open: boolean;
@@ -414,6 +415,23 @@ function TreeNode({
           <span className="rd-bar" />
           <span className="rd-bar" />
         </span>
+        {task.timeframeBucket && (
+          <TimeframeBadge
+            bucket={task.timeframeBucket}
+            anchor={task.timeframeAnchor}
+            variant="compact"
+          />
+        )}
+        {task.focusedAt && (
+          <span
+            className="rd-tree-focus"
+            aria-label={t('task.todayFocus')}
+            title={t('task.todayFocus')}
+            style={{ color: 'var(--accent)' }}
+          >
+            ★
+          </span>
+        )}
         {showStuck && (
           <span className="rd-tree-stuck">
             ▲{' '}

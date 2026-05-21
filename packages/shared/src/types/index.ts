@@ -317,6 +317,14 @@ export interface SearchResults {
       | 'dueHard'
       | 'timeframeBucket'
       | 'timeframeAnchor'
+      // Needed for StaleBadge — without these, search rows can't show
+      // the doing-too-long / blocked-too-long visual cue that other
+      // surfaces carry.
+      | 'startedAt'
+      | 'blockedAt'
+      // Needed for FocusPin's read-only "is pinned" indicator — toggling
+      // happens elsewhere; search only needs to *show* the pin state.
+      | 'focusedAt'
     >
   >;
   notes: Array<Pick<Note, 'id' | 'projectId' | 'body' | 'tags' | 'createdAt'>>;

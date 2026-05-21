@@ -2705,6 +2705,8 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
           priority: true,
           dueSoft: true,
           dueHard: true,
+          timeframeBucket: true,
+          timeframeAnchor: true,
         },
       }),
       prisma.note.findMany({
@@ -2745,6 +2747,9 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         priority: t.priority,
         dueSoft: isoOrUndef(t.dueSoft),
         dueHard: isoOrUndef(t.dueHard),
+        timeframeBucket:
+          (t.timeframeBucket as Task['timeframeBucket']) ?? undefined,
+        timeframeAnchor: isoOrUndef(t.timeframeAnchor ?? null),
       })),
       notes: noteRows.map((n) => ({
         id: n.id,

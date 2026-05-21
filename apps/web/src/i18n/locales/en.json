@@ -149,7 +149,11 @@
     "windowDays": "{{elapsed}}d into {{total}}d",
     "windowPast": "{{n}}d past the window",
     "windowSoon": "{{n}}d left",
-    "somedayCaption": "No deadline — surface when ready."
+    "somedayCaption": "No deadline — surface when ready.",
+    "reset": "Reset window",
+    "resetHint": "Re-anchor to today — start the bucket window over.",
+    "filterAll": "All",
+    "filterNone": "No timeframe"
   },
   "task": {
     "management": "Task management",

@@ -33,6 +33,11 @@ interface TaskDetailsDrawerProps {
   onDelete?: (taskId: string) => void;
   onAddDependency: () => void;
   onRemoveDependency: (depId: string) => void;
+  /** Auto-commit hook for one-click actions inside the drawer (currently
+   *  the timeframe re-anchor button). The drawer still otherwise uses the
+   *  explicit-save pattern via onSave — this is only invoked for actions
+   *  that are themselves the commitment ("reset the bucket clock"). */
+  onApplyPatch?: (taskId: string, patch: Partial<Task>) => void;
 }
 
 /**
@@ -66,6 +71,7 @@ export function TaskDetailsDrawer({
   onDelete,
   onAddDependency,
   onRemoveDependency,
+  onApplyPatch,
 }: TaskDetailsDrawerProps) {
   const { t } = useTranslation();
   const trapRef = useRef<HTMLDivElement>(null);
@@ -235,6 +241,21 @@ export function TaskDetailsDrawer({
               <TimeframeCountdownText
                 bucket={form.timeframeBucket}
                 anchor={form.timeframeAnchor}
+                onResetAnchor={
+                  // Only offer re-anchor for an existing task with a dated
+                  // bucket. New tasks haven't been saved yet — saving will
+                  // anchor them. Someday is intentionally not on the clock,
+                  // so resetting it is meaningless.
+                  selectedTask && form.timeframeBucket && form.timeframeBucket !== 'someday'
+                    ? () => {
+                        const nowIso = new Date().toISOString();
+                        setForm((f) => ({ ...f, timeframeAnchor: nowIso }));
+                        if (onApplyPatch) {
+                          onApplyPatch(selectedTask.id, { timeframeAnchor: nowIso });
+                        }
+                      }
+                    : undefined
+                }
               />
             </div>
 
@@ -572,9 +593,15 @@ export function TaskDetailsDrawer({
 function TimeframeCountdownText({
   bucket,
   anchor,
+  onResetAnchor,
 }: {
   bucket: TimeframeBucket | null;
   anchor: string | null;
+  /** When provided, render a "Reset window" button next to the caption
+   *  that re-anchors the bucket to now. Click is the one and only side
+   *  effect — no confirmation, no toast (the visible countdown change is
+   *  feedback enough). */
+  onResetAnchor?: () => void;
 }) {
   const { t } = useTranslation();
   if (!bucket) return null;
@@ -590,14 +617,31 @@ function TimeframeCountdownText({
   return (
     <div
       className={`rd-tf-countdown${status.isPast ? ' is-past' : ''}`}
-      style={{ marginTop: 6 }}
+      style={{
+        marginTop: 6,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
     >
-      {status.isPast
-        ? t('timeframe.windowPast', { n: Math.abs(status.daysRemaining ?? 0) })
-        : t('timeframe.windowDays', {
-            elapsed: Math.max(0, status.daysElapsed),
-            total: status.totalDays,
-          })}
+      <span>
+        {status.isPast
+          ? t('timeframe.windowPast', { n: Math.abs(status.daysRemaining ?? 0) })
+          : t('timeframe.windowDays', {
+              elapsed: Math.max(0, status.daysElapsed),
+              total: status.totalDays,
+            })}
+      </span>
+      {onResetAnchor && (
+        <button
+          type="button"
+          className="rd-btn rd-btn-ghost rd-btn-sm"
+          onClick={onResetAnchor}
+          title={t('timeframe.resetHint')}
+        >
+          {t('timeframe.reset')}
+        </button>
+      )}
     </div>
   );
 }

@@ -304,7 +304,21 @@ export type ClientFrame =
  */
 export interface SearchResults {
   query: string;
-  tasks: Array<Pick<Task, 'id' | 'projectId' | 'title' | 'status' | 'size' | 'priority' | 'dueSoft' | 'dueHard'>>;
+  tasks: Array<
+    Pick<
+      Task,
+      | 'id'
+      | 'projectId'
+      | 'title'
+      | 'status'
+      | 'size'
+      | 'priority'
+      | 'dueSoft'
+      | 'dueHard'
+      | 'timeframeBucket'
+      | 'timeframeAnchor'
+    >
+  >;
   notes: Array<Pick<Note, 'id' | 'projectId' | 'body' | 'tags' | 'createdAt'>>;
   projects: Array<Pick<Project, 'id' | 'name' | 'type' | 'description'>>;
 }

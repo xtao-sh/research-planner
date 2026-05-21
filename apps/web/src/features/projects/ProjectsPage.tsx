@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { Project, ProjectType } from '@rp/shared';
+import type { Project, ProjectType, TimeframeBucket } from '@rp/shared';
+import { TIMEFRAME_BUCKETS } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
 import { PROJECT_TYPES, getProjectTypeMeta } from './projectTypes';
 import { getStaleLevel } from './staleIndicator';
@@ -200,7 +201,7 @@ function ProjectCard({
   onOpen,
 }: {
   project: Project;
-  tasks: { status: string }[];
+  tasks: { status: string; timeframeBucket?: TimeframeBucket | null }[];
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
@@ -219,6 +220,23 @@ function ProjectCard({
     }
     return { doing, todo, blocked, done };
   }, [tasks]);
+
+  // Per-bucket counts for the small "active buckets" strip below the stats.
+  // Only non-done tasks count — we're showing live commitments, not history.
+  const bucketCounts = useMemo(() => {
+    const out: Record<TimeframeBucket, number> = {
+      week: 0, month: 0, quarter: 0, year: 0, someday: 0,
+    };
+    for (const tk of tasks) {
+      if (tk.status === 'done') continue;
+      if (tk.timeframeBucket) out[tk.timeframeBucket]++;
+    }
+    return out;
+  }, [tasks]);
+  const hasAnyBucket = useMemo(
+    () => Object.values(bucketCounts).some((n) => n > 0),
+    [bucketCounts]
+  );
 
   const stale = getStaleLevel(project.updatedAt);
   const staleLabel =
@@ -264,6 +282,39 @@ function ProjectCard({
           {t('projectsPage.stats.done')}
         </div>
       </div>
+
+      {hasAnyBucket && (
+        <div
+          className="rd-proj-buckets"
+          aria-label={t('timeframe.label')}
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginTop: 6,
+            fontSize: 11.5,
+            color: 'var(--rd-ink-3)',
+            flexWrap: 'wrap',
+          }}
+        >
+          {TIMEFRAME_BUCKETS.map((b) => {
+            const n = bucketCounts[b];
+            if (n === 0) return null;
+            return (
+              <span
+                key={b}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                <span
+                  className="rd-tf-chip-dot"
+                  data-bucket={b}
+                  aria-hidden="true"
+                />
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+              </span>
+            );
+          })}
+        </div>
+      )}
 
       {total > 0 && (
         <div className="rd-proj-flow" aria-hidden="true">

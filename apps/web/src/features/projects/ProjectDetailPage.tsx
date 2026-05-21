@@ -1015,6 +1015,7 @@ export function ProjectDetailPage() {
             onDelete={handleDeleteTask}
             onAddDependency={handleAddDependency}
             onRemoveDependency={handleRemoveDependency}
+            onApplyPatch={applyTaskPatch}
           />
 
           <TaskTreeDrawer

@@ -18,7 +18,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { ScheduleResult, Task } from '@rp/shared';
+import type { ScheduleResult, Task, TimeframeBucket } from '@rp/shared';
+import { TIMEFRAME_BUCKETS } from '@rp/shared';
 import { StaleBadge } from '../tasks/StaleBadge';
 import { TimeframeBadge } from '../tasks/TimeframeBadge';
 import { FocusPinButton } from '../tasks/FocusPinButton';
@@ -167,6 +168,36 @@ export function TaskListPanel({
     });
   }
 
+  // Timeframe filter — null = no filter (show all), 'none' = show only
+  // bucketless tasks, otherwise show only tasks with this bucket. The
+  // chip row only renders when at least one task in the project has a
+  // bucket; users who don't use the feature never see it.
+  const [bucketFilter, setBucketFilter] = useState<TimeframeBucket | 'none' | null>(null);
+  const anyBucketed = useMemo(
+    () => tasks.some((t) => Boolean(t.timeframeBucket)),
+    [tasks]
+  );
+  // Per-bucket counts for the chip badges. Excludes done tasks so the
+  // counts match the typical user mental model ("how many active tasks
+  // are in this bucket").
+  const bucketCounts = useMemo(() => {
+    const out: Record<TimeframeBucket | 'none', number> = {
+      week: 0, month: 0, quarter: 0, year: 0, someday: 0, none: 0,
+    };
+    for (const t of tasks) {
+      if (t.status === 'done') continue;
+      const b = t.timeframeBucket;
+      if (b) out[b]++;
+      else out.none++;
+    }
+    return out;
+  }, [tasks]);
+  const filteredTasks = useMemo(() => {
+    if (bucketFilter === null) return tasks;
+    if (bucketFilter === 'none') return tasks.filter((t) => !t.timeframeBucket);
+    return tasks.filter((t) => t.timeframeBucket === bucketFilter);
+  }, [tasks, bucketFilter]);
+
   function handleDragEnd(event: DragEndEvent) {
     if (!onReorder) return;
     const { active, over } = event;
@@ -208,7 +239,7 @@ export function TaskListPanel({
   const { todayTasks, sections, childCount, parentTitleById } = useMemo(() => {
     const titleById = new Map<string, string>();
     const counts = new Map<string, number>();
-    for (const tk of tasks) {
+    for (const tk of filteredTasks) {
       titleById.set(tk.id, tk.title);
       if (tk.parentTaskId) {
         counts.set(tk.parentTaskId, (counts.get(tk.parentTaskId) ?? 0) + 1);
@@ -223,7 +254,7 @@ export function TaskListPanel({
     // status sections + the focus star already do the job.
     const now = Date.now();
     const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
-    const candidateToday = tasks.filter((tk) => {
+    const candidateToday = filteredTasks.filter((tk) => {
       if (tk.status === 'done') return false;
       if (tk.focusedAt) return true;
       if (tk.dueSoft) {
@@ -232,7 +263,7 @@ export function TaskListPanel({
       }
       return false;
     });
-    const nonDone = tasks.filter((tk) => tk.status !== 'done').length;
+    const nonDone = filteredTasks.filter((tk) => tk.status !== 'done').length;
     const todayList: Task[] =
       candidateToday.length > 0 && nonDone >= 6
         ? candidateToday.slice().sort((a, b) => a.priority - b.priority)
@@ -241,7 +272,7 @@ export function TaskListPanel({
 
     const byStatus = new Map<Task['status'], Task[]>();
     for (const s of SECTION_ORDER) byStatus.set(s, []);
-    for (const tk of tasks) {
+    for (const tk of filteredTasks) {
       if (todaySet.has(tk.id)) continue; // shown in Today section
       const arr = byStatus.get(tk.status);
       if (arr) arr.push(tk);
@@ -260,7 +291,7 @@ export function TaskListPanel({
       parentTitleById: titleById,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks]);
+  }, [filteredTasks]);
 
   return (
     <div className="card">
@@ -290,6 +321,58 @@ export function TaskListPanel({
       {/* Caption — teaches the keyboard shortcuts unobtrusively. */}
       {(onNest || onOutdent) && (
         <p className="task-list-caption">{t('task.listCaption')}</p>
+      )}
+      {anyBucketed && (
+        <div
+          className="rd-tf-group"
+          role="toolbar"
+          aria-label={t('timeframe.label')}
+          style={{ padding: '6px 14px 2px' }}
+        >
+          <button
+            type="button"
+            className="rd-tf-chip"
+            aria-pressed={bucketFilter === null}
+            onClick={() => setBucketFilter(null)}
+          >
+            <span>{t('timeframe.filterAll')}</span>
+          </button>
+          {TIMEFRAME_BUCKETS.map((b) => {
+            const n = bucketCounts[b];
+            if (n === 0 && bucketFilter !== b) return null;
+            return (
+              <button
+                key={b}
+                type="button"
+                className="rd-tf-chip"
+                data-bucket={b}
+                aria-pressed={bucketFilter === b}
+                onClick={() => setBucketFilter(bucketFilter === b ? null : b)}
+              >
+                <span
+                  className="rd-tf-chip-dot"
+                  data-bucket={b}
+                  aria-hidden="true"
+                />
+                <span>{t(`timeframe.buckets.${b}` as const)}</span>
+                <span style={{ opacity: 0.7, marginLeft: 2 }}>{n}</span>
+              </button>
+            );
+          })}
+          {bucketCounts.none > 0 && (
+            <button
+              type="button"
+              className="rd-tf-chip"
+              aria-pressed={bucketFilter === 'none'}
+              onClick={() => setBucketFilter(bucketFilter === 'none' ? null : 'none')}
+            >
+              <span>{t('timeframe.filterNone')}</span>
+              <span style={{ opacity: 0.7, marginLeft: 2 }}>
+                {bucketCounts.none}
+              </span>
+            </button>
+          )}
+        </div>
       )}
       {creatingNew && renderNewInlineEditor && (
         <div className="task-inline-editor-new">

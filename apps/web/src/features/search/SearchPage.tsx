@@ -5,6 +5,7 @@ import type { Project, SearchResults } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
 import { searchAll } from '../../api/search';
 import { SkeletonList } from '../../components/Skeleton';
+import { TimeframeBadge } from '../tasks/TimeframeBadge';
 
 /**
  * Splits a #hashtag-aware string into React nodes (tags become
@@ -259,6 +260,16 @@ export function SearchPage() {
                           </>
                         )}
                         <span className="rd-size-chip">{task.size}</span>
+                        {task.timeframeBucket && (
+                          <>
+                            <span className="rd-sep">·</span>
+                            <TimeframeBadge
+                              bucket={task.timeframeBucket}
+                              anchor={task.timeframeAnchor}
+                              variant="compact"
+                            />
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

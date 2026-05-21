@@ -207,10 +207,37 @@ async function migrateFromJson(prisma: PrismaClient, parsed: StoreShape, demoWor
     }
   }
 
-  // Tasks
+  // Tasks. Seed assigns deterministic timeframe buckets per-task so the
+  // demo workspace shows the bucket feature in action — without this
+  // the UI works but renders no bucket badges anywhere, which obscures
+  // what /now's "By timeframe" section is even for. Cycle through the
+  // dated buckets (week → month → quarter → year) by task index;
+  // someday is reserved for explicit user opt-in. Anchor is "now minus
+  // a sprinkling" so some tasks read as fresh and a few as past-window.
+  const TF_CYCLE = ['week', 'month', 'quarter', 'year'] as const;
+  let tfIdx = 0;
   for (const [, list] of parsed.tasks || []) {
     for (const t of list) {
       const labelsJson = t.labels ? JSON.stringify(t.labels) : null;
+      // Skip bucketing on done tasks (history) and on every 4th task
+      // (some real tasks have no commitment yet — keeps the UI honest).
+      const bucket =
+        t.status === 'done' || tfIdx % 4 === 3
+          ? null
+          : TF_CYCLE[tfIdx % TF_CYCLE.length];
+      // Anchor jitter: most tasks anchor in the last week so they're
+      // mid-window; a few anchor 2-3 weeks back so the demo shows the
+      // is-past styling on week-bucket items.
+      const anchorOffsetDays =
+        bucket && tfIdx % 5 === 0 ? -16 : tfIdx % 7;
+      const anchor =
+        bucket
+          ? new Date(Date.now() - anchorOffsetDays * 86_400_000)
+          : null;
+      tfIdx++;
+      const tfFields = bucket
+        ? { timeframeBucket: bucket, timeframeAnchor: anchor }
+        : { timeframeBucket: null, timeframeAnchor: null };
       await prisma.task.upsert({
         where: { id: t.id },
         update: {
@@ -231,6 +258,7 @@ async function migrateFromJson(prisma: PrismaClient, parsed: StoreShape, demoWor
           dueHard: parseMaybeDate(t.dueHard),
           milestoneId: t.milestoneId ?? null,
           notes: t.notes ?? null,
+          ...tfFields,
         },
         create: {
           id: t.id,
@@ -251,6 +279,7 @@ async function migrateFromJson(prisma: PrismaClient, parsed: StoreShape, demoWor
           dueHard: parseMaybeDate(t.dueHard),
           milestoneId: t.milestoneId ?? null,
           notes: t.notes ?? null,
+          ...tfFields,
         },
       });
     }

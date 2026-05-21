@@ -227,7 +227,19 @@ const estimateSchema = z.object({
   m: z.number().finite().min(0).optional(),
   p: z.number().finite().min(0).optional(),
   confidence: z.number().min(0).max(1).optional(),
-});
+}).refine(
+  (e) => {
+    // PERT requires O ≤ M ≤ P (optimistic ≤ most-likely ≤ pessimistic).
+    // Without this, a payload like { o: 10, m: 1, p: 1 } silently produces
+    // a scheduler duration shorter than the optimistic estimate
+    // ((10 + 4·1 + 1)/6 ≈ 2.5h). Round 17 backend audit flagged this.
+    const o = e.o ?? 0;
+    const m = e.m ?? o;
+    const p = e.p ?? m;
+    return o <= m && m <= p;
+  },
+  { message: 'Estimate must satisfy O ≤ M ≤ P', path: ['m'] }
+);
 
 const projectCreateSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -1919,6 +1931,7 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
     }
 
     type CycleErr = { __cycle: true; reason: 'self' | 'cycle' | 'cross-project' | 'depth' | 'missing' };
+    type MissingErr = { __missing: true };
     const txResult = await prisma.$transaction(async (tx) => {
       // Re-run the parent walk inside the tx so cycles created by a
       // concurrent reassignment are caught before our write commits.
@@ -2004,12 +2017,31 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
           notes: body.notes !== undefined ? body.notes : original.notes,
         },
       });
+    }).catch((err: unknown) => {
+      // Race: if the parent project was cascade-deleted between our
+      // initial findUnique and the update inside the tx, Prisma throws
+      // P2025 ("Record to update not found"). Translate to a sentinel
+      // so the route returns 404 instead of bubbling 500.
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        const missing: MissingErr = { __missing: true };
+        return missing;
+      }
+      throw err;
     });
     if ((txResult as CycleErr).__cycle) {
       const err = txResult as CycleErr;
       return rep
         .code(400)
         .send({ message: `Invalid parentTaskId (${err.reason})` });
+    }
+    // Race: parent project may have been deleted (cascading away this
+    // task) between the initial findUnique and the tx.task.update. The
+    // update throws Prisma P2025; we catch it via the sentinel below.
+    if ((txResult as { __missing?: true }).__missing) {
+      return rep.code(404).send({ message: 'Task not found' });
     }
     const updated = txResult as TaskRow;
     await touchProject(original.projectId);

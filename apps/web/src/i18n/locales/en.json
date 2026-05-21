@@ -676,6 +676,7 @@
     "weekdaySun": "Sun",
     "observationBlocked": "{{n}} task(s) still blocked. Consider unblocking or splitting.",
     "observationCompleted": "{{n}} task(s) completed this week.",
+    "observationTimeframePast": "{{n}} task(s) past their timeframe window. Re-bucket or push forward.",
     "observationDormant": "Project '{{name}}' dormant {{n}} days. Surface it.",
     "observationCapacity": "Capacity is signal, not score. Use a low-intensity day to recover.",
     "title": "A reflection, not a report card.",
@@ -757,6 +758,8 @@
   "now": {
     "errorToggleFocus": "Couldn't toggle focus pin. Try again.",
     "errorApplyPatch": "Couldn't update task. Try again.",
+    "byTimeframeEyebrow": "By timeframe",
+    "timeframePast": "{{n}} past window",
     "title": "Top of mind",
     "greetMorning": "Good morning.",
     "greetAfternoon": "Good afternoon.",

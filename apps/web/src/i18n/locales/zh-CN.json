@@ -685,6 +685,7 @@
     "stillBlocked": "仍然受阻",
     "observationBlocked": "仍有 {{n}} 项任务受阻，考虑解阻或拆分。",
     "observationCompleted": "本周完成了 {{n}} 项任务。",
+    "observationTimeframePast": "{{n}} 项任务已超出设定时段，重新分桶或主动延后。",
     "observationDormant": "项目「{{name}}」已沉寂 {{n}} 天，需要重新关注。",
     "observationCapacity": "容量是信号，不是分数。低强度的一天用来恢复。"
   },
@@ -753,6 +754,8 @@
   "now": {
     "errorToggleFocus": "切换焦点失败，请稍后再试。",
     "errorApplyPatch": "更新任务失败，请稍后再试。",
+    "byTimeframeEyebrow": "按时段",
+    "timeframePast": "{{n}} 项超出窗口",
     "title": "今日聚焦",
     "greetMorning": "早上好。",
     "greetAfternoon": "下午好。",

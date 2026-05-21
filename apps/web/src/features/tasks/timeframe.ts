@@ -77,3 +77,49 @@ export function bucketRank(bucket: TimeframeBucket): number {
     case 'someday': return 99;
   }
 }
+
+/**
+ * Count tasks past their timeframe window. Used by /review for the
+ * weekly observation and (eventually) by /now's section header for the
+ * "N past window" badge. Excludes:
+ *  - done tasks (already finished)
+ *  - someday (explicitly not on the clock)
+ *  - bucketless tasks (no expectation set)
+ */
+export function countPastTimeframe(
+  tasks: ReadonlyArray<Pick<Task, 'status' | 'timeframeBucket' | 'timeframeAnchor'>>,
+  now: Date = new Date()
+): number {
+  let n = 0;
+  for (const t of tasks) {
+    if (t.status === 'done') continue;
+    if (!t.timeframeBucket || t.timeframeBucket === 'someday') continue;
+    const s = computeTimeframeStatus(t.timeframeBucket, t.timeframeAnchor, now);
+    if (s?.isPast) n++;
+  }
+  return n;
+}
+
+/**
+ * Group tasks by timeframe bucket. Tasks without a bucket are dropped.
+ * Returns a fully-populated record so callers can iterate via
+ * TIMEFRAME_BUCKETS deterministically.
+ */
+export function groupTasksByTimeframe<
+  T extends Pick<Task, 'timeframeBucket' | 'status'>
+>(tasks: ReadonlyArray<T>, includeDone = false): Record<TimeframeBucket, T[]> {
+  const groups: Record<TimeframeBucket, T[]> = {
+    week: [],
+    month: [],
+    quarter: [],
+    year: [],
+    someday: [],
+  };
+  for (const t of tasks) {
+    if (!includeDone && t.status === 'done') continue;
+    const b = t.timeframeBucket;
+    if (!b) continue;
+    groups[b].push(t);
+  }
+  return groups;
+}

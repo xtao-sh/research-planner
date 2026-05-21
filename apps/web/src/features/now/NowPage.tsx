@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { Project, Task } from '@rp/shared';
+import type { Project, Task, TimeframeBucket } from '@rp/shared';
+import { TIMEFRAME_BUCKETS } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
 import { getProjectTypeMeta } from '../projects/projectTypes';
 import { setTaskFocus } from '../../api/tasks';
@@ -10,6 +11,7 @@ import { STATUS_COLOR, nextStatus } from '../tasks/statusMeta';
 import { deriveIntensity } from '../../shared/intensity';
 import { useIntensityBudget } from '../settings/settingsStore';
 import { useToast } from '../../components/Toast';
+import { computeTimeframeStatus, groupTasksByTimeframe } from '../tasks/timeframe';
 
 interface TaskWithProject {
   task: Task;
@@ -69,6 +71,37 @@ export function NowPage() {
   const blockedTasks = useMemo(
     () => allTasks.filter((x) => x.task.status === 'blocked'),
     [allTasks]
+  );
+
+  // Group non-done tasks with a timeframe bucket by bucket. Tasks without
+  // a bucket are excluded; the section as a whole hides if nothing is
+  // bucketed (don't pay screen real-estate for a feature the user hasn't
+  // opted into). Tasks already in earlier state sections (top-of-mind,
+  // doing, blocked) deliberately *also* appear here — it's a different
+  // lens, not a different list.
+  const timeframeGroups = useMemo(() => {
+    // groupTasksByTimeframe operates on Task[], but we need TaskWithProject[]
+    // here. Bridge by computing once over the bare tasks then re-resolving.
+    const projectById = new Map<string, Project>(projects.map((p) => [p.id, p]));
+    const taskGroups = groupTasksByTimeframe(allTasks.map((x) => x.task));
+    const out: Record<TimeframeBucket, TaskWithProject[]> = {
+      week: [],
+      month: [],
+      quarter: [],
+      year: [],
+      someday: [],
+    };
+    for (const bucket of Object.keys(taskGroups) as TimeframeBucket[]) {
+      for (const tk of taskGroups[bucket]) {
+        const proj = projectById.get(tk.projectId);
+        if (proj) out[bucket].push({ task: tk, project: proj });
+      }
+    }
+    return out;
+  }, [allTasks, projects]);
+  const hasAnyTimeframed = useMemo(
+    () => Object.values(timeframeGroups).some((arr) => arr.length > 0),
+    [timeframeGroups]
   );
   const focusedTasks = useMemo(
     () =>
@@ -310,6 +343,61 @@ export function NowPage() {
                   />
                 ))}
               </NowSection>
+            )}
+
+            {hasAnyTimeframed && (
+              <>
+                <div
+                  className="rd-section-eyebrow"
+                  style={{ marginTop: 12 }}
+                >
+                  {t('now.byTimeframeEyebrow')}
+                </div>
+                {TIMEFRAME_BUCKETS.map((bucket) => {
+                  const list = timeframeGroups[bucket];
+                  if (list.length === 0) return null;
+                  // Past-window count: tasks whose anchor + bucket.days has
+                  // already elapsed. 'someday' never reads as past.
+                  const pastCount =
+                    bucket === 'someday'
+                      ? 0
+                      : list.filter(({ task }) => {
+                          const s = computeTimeframeStatus(
+                            task.timeframeBucket,
+                            task.timeframeAnchor
+                          );
+                          return s?.isPast === true;
+                        }).length;
+                  const label = pastCount
+                    ? `${t(`timeframe.buckets.${bucket}` as const)} · ${t(
+                        'now.timeframePast',
+                        { n: pastCount }
+                      )}`
+                    : t(`timeframe.buckets.${bucket}` as const);
+                  const singleProject =
+                    new Set(list.map((x) => x.project.id)).size <= 1;
+                  return (
+                    <NowSection
+                      key={bucket}
+                      label={label}
+                      count={list.length}
+                      color={`var(--tf-${bucket})`}
+                    >
+                      {list.map(({ task, project }) => (
+                        <NowTaskRow
+                          key={`tf-${bucket}-${task.id}`}
+                          task={task}
+                          project={project}
+                          showProject={!singleProject}
+                          onClick={() => handleOpen(project.id)}
+                          onToggleFocus={handleToggleFocus}
+                          onApplyPatch={handleApplyPatch}
+                        />
+                      ))}
+                    </NowSection>
+                  );
+                })}
+              </>
             )}
           </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Task } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
+import { computeTimeframeStatus } from '../tasks/timeframe';
 
 /**
  * Weekly Retrospective — /review.
@@ -151,6 +152,30 @@ export function ReviewPage() {
         })
       );
     }
+    // Tasks past their timeframe window (excluding 'someday' which is
+    // explicitly not on the clock). This is an informational nudge — the
+    // product stance is "silent on past-bucket" elsewhere, but a weekly
+    // retrospective is exactly the place to surface accumulated drift.
+    const now = new Date();
+    let pastTimeframe = 0;
+    for (const tk of allTasks) {
+      if (tk.status === 'done') continue;
+      if (!tk.timeframeBucket || tk.timeframeBucket === 'someday') continue;
+      const s = computeTimeframeStatus(tk.timeframeBucket, tk.timeframeAnchor, now);
+      if (s?.isPast) pastTimeframe++;
+    }
+    if (pastTimeframe > 0) {
+      out.push(
+        t('review.observationTimeframePast', {
+          n: pastTimeframe,
+          defaultValue:
+            pastTimeframe === 1
+              ? '1 task is past its timeframe window. Re-bucket or push forward.'
+              : `${pastTimeframe} tasks are past their timeframe window. Re-bucket or push forward.`,
+        })
+      );
+    }
+
     // Dormant project — last updatedAt > 14 days ago.
     const nowMs = Date.now();
     for (const p of projects) {
@@ -175,7 +200,7 @@ export function ReviewPage() {
       })
     );
     return out;
-  }, [stillBlocked, completed, projects, t]);
+  }, [stillBlocked, completed, allTasks, projects, t]);
 
   const dayLabels = [
     t('review.weekdayMon'),

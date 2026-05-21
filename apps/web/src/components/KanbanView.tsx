@@ -25,6 +25,7 @@ import type { Task } from '@rp/shared';
 import { StaleBadge } from '../features/tasks/StaleBadge';
 import { FocusPinButton } from '../features/tasks/FocusPinButton';
 import { deriveIntensity } from '../shared/intensity';
+import { TimeframeBadge } from '../features/tasks/TimeframeBadge';
 
 interface KanbanViewProps {
   tasks: Task[];
@@ -428,6 +429,13 @@ const SortableFlowCard = React.memo(
               day: '2-digit',
             })}
           </span>
+        )}
+        {task.timeframeBucket && (
+          <TimeframeBadge
+            bucket={task.timeframeBucket}
+            anchor={task.timeframeAnchor}
+            variant="compact"
+          />
         )}
         <StaleBadge task={task} />
         {onToggleFocus && (

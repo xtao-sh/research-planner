@@ -1,6 +1,6 @@
 // Task form state shape and helpers shared by the task form UI.
 
-import type { Task, TaskSize } from '@rp/shared';
+import type { Task, TaskSize, TimeframeBucket } from '@rp/shared';
 
 export type TaskFormState = {
   title: string;
@@ -12,6 +12,11 @@ export type TaskFormState = {
   estimate: { o: number; m: number; p: number; confidence?: number };
   dueSoft: string;
   dueHard: string;
+  /** Fuzzy 'finish-in-about' bucket. null = no bucket. */
+  timeframeBucket: TimeframeBucket | null;
+  /** Anchor ISO date-time. Read-only from the form's perspective — the
+   *  server fills it on first set; the UI only displays the countdown. */
+  timeframeAnchor: string | null;
   assignee: string;
   notes: string;
   milestoneId: string;
@@ -56,6 +61,8 @@ export function defaultForm(): TaskFormState {
     estimate: { o: 1, m: 1, p: 1 },
     dueSoft: '',
     dueHard: '',
+    timeframeBucket: null,
+    timeframeAnchor: null,
     assignee: '',
     notes: '',
     milestoneId: '',

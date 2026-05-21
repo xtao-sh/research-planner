@@ -20,6 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { ScheduleResult, Task } from '@rp/shared';
 import { StaleBadge } from '../tasks/StaleBadge';
+import { TimeframeBadge } from '../tasks/TimeframeBadge';
 import { FocusPinButton } from '../tasks/FocusPinButton';
 import { STATUS_COLOR } from '../tasks/statusMeta';
 import { deriveIntensity } from '../../shared/intensity';
@@ -701,6 +702,14 @@ function SortableTaskRow({
                   <span className="badge badge-warning" title={t('task.deadlineRisk')}>
                     {t('task.delayed')}
                   </span>
+                )}
+                {tk.timeframeBucket && (
+                  <TimeframeBadge
+                    bucket={tk.timeframeBucket}
+                    anchor={tk.timeframeAnchor}
+                    variant="full"
+                    showCountdown={false}
+                  />
                 )}
                 <StaleBadge task={tk} />
                 <FocusPinButton

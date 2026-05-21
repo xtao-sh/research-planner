@@ -296,6 +296,8 @@ export function ProjectDetailPage() {
         },
         dueSoft: formatDateInput(current.dueSoft),
         dueHard: formatDateInput(current.dueHard),
+        timeframeBucket: current.timeframeBucket ?? null,
+        timeframeAnchor: current.timeframeAnchor ?? null,
         assignee: current.assignee || '',
         notes: current.notes || '',
         milestoneId: current.milestoneId || '',
@@ -367,6 +369,13 @@ export function ProjectDetailPage() {
         notes: form.notes || undefined,
         dueSoft: parseDateInput(form.dueSoft),
         dueHard: parseDateInput(form.dueHard),
+        // For create: only send if user picked one (null is "make it
+        // explicit none" which we don't want at creation — undefined =
+        // leave it off entirely).
+        // For edit: send the value explicitly so null clears the bucket.
+        timeframeBucket: selectedTaskId
+          ? form.timeframeBucket
+          : form.timeframeBucket ?? undefined,
         milestoneId: form.milestoneId || undefined,
         // null sends "make this top-level"; undefined leaves it untouched.
         parentTaskId: form.parentTaskId || null,

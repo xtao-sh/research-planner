@@ -128,6 +128,29 @@
     "delayDays": "延误 {{days}} 天",
     "daysLeft": "剩余 {{days}} 天"
   },
+  "timeframe": {
+    "label": "时段",
+    "hint": "大约什么时候完成 — 是一个模糊窗口，不是具体日期。",
+    "none": "不设时段",
+    "buckets": {
+      "week": "本周",
+      "month": "本月",
+      "quarter": "本季度",
+      "year": "今年",
+      "someday": "改日"
+    },
+    "bucketsShort": {
+      "week": "周",
+      "month": "月",
+      "quarter": "季",
+      "year": "年",
+      "someday": "—"
+    },
+    "windowDays": "{{total}} 天里已经过去 {{elapsed}} 天",
+    "windowPast": "超出窗口 {{n}} 天",
+    "windowSoon": "还剩 {{n}} 天",
+    "somedayCaption": "不设截止 — 准备好了再处理。"
+  },
   "task": {
     "management": "任务管理",
     "list": "任务列表",

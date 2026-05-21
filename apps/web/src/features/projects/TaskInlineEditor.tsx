@@ -1,12 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Task } from '@rp/shared';
+import type { Task, TimeframeBucket } from '@rp/shared';
 import {
   TaskFormState,
   statusOptions,
   sizeOptions,
   parseDateInput,
 } from '../task-form/form';
+import { TimeframeChipGroup } from '../tasks/TimeframeChipGroup';
 
 interface TaskInlineEditorProps {
   form: TaskFormState;
@@ -182,6 +183,22 @@ export function TaskInlineEditor({
               onApplyPatch(selectedTask.id, {
                 dueHard: parseDateInput(e.target.value),
               });
+            }
+          }}
+        />
+      </div>
+
+      <div className="form-group">
+        <label>{t('timeframe.label')}</label>
+        <TimeframeChipGroup
+          value={form.timeframeBucket}
+          onChange={(next: TimeframeBucket | null) => {
+            setForm((f) => ({ ...f, timeframeBucket: next }));
+            // Auto-commit for existing tasks. The server fills the
+            // anchor on first set; we'll see the fresh anchor on the
+            // next refresh.
+            if (selectedTask && onApplyPatch) {
+              onApplyPatch(selectedTask.id, { timeframeBucket: next });
             }
           }}
         />

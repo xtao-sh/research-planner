@@ -1,12 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Dependency, Milestone, Task } from '@rp/shared';
+import type { Dependency, Milestone, Task, TimeframeBucket } from '@rp/shared';
 import {
   TaskFormState,
   typeOptions,
   statusOptions,
   sizeOptions,
 } from '../task-form/form';
+import { TimeframeChipGroup } from '../tasks/TimeframeChipGroup';
+import { computeTimeframeStatus } from '../tasks/timeframe';
 
 interface TaskDetailsDrawerProps {
   open: boolean;
@@ -219,6 +221,20 @@ export function TaskDetailsDrawer({
                 type="date"
                 value={form.dueHard}
                 onChange={(e) => setForm((f) => ({ ...f, dueHard: e.target.value }))}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>{t('timeframe.label')}</label>
+              <TimeframeChipGroup
+                value={form.timeframeBucket}
+                onChange={(next: TimeframeBucket | null) =>
+                  setForm((f) => ({ ...f, timeframeBucket: next }))
+                }
+              />
+              <TimeframeCountdownText
+                bucket={form.timeframeBucket}
+                anchor={form.timeframeAnchor}
               />
             </div>
 
@@ -545,5 +561,43 @@ export function TaskDetailsDrawer({
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Small status caption rendered under the timeframe chips: "3 days into a
+ * 7-day window" / "5 days past the window". Returns null when there's no
+ * bucket or anchor. someday-bucket gets a fixed reassuring caption.
+ */
+function TimeframeCountdownText({
+  bucket,
+  anchor,
+}: {
+  bucket: TimeframeBucket | null;
+  anchor: string | null;
+}) {
+  const { t } = useTranslation();
+  if (!bucket) return null;
+  if (bucket === 'someday') {
+    return (
+      <div className="rd-tf-countdown" style={{ marginTop: 6 }}>
+        {t('timeframe.somedayCaption')}
+      </div>
+    );
+  }
+  const status = anchor ? computeTimeframeStatus(bucket, anchor) : null;
+  if (!status || status.totalDays === null) return null;
+  return (
+    <div
+      className={`rd-tf-countdown${status.isPast ? ' is-past' : ''}`}
+      style={{ marginTop: 6 }}
+    >
+      {status.isPast
+        ? t('timeframe.windowPast', { n: Math.abs(status.daysRemaining ?? 0) })
+        : t('timeframe.windowDays', {
+            elapsed: Math.max(0, status.daysElapsed),
+            total: status.totalDays,
+          })}
+    </div>
   );
 }

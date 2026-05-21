@@ -128,6 +128,29 @@
     "delayDays": "{{days}} days late",
     "daysLeft": "{{days}} days left"
   },
+  "timeframe": {
+    "label": "Timeframe",
+    "hint": "About how soon — a fuzzy window, not a date.",
+    "none": "No timeframe",
+    "buckets": {
+      "week": "Week",
+      "month": "Month",
+      "quarter": "Quarter",
+      "year": "Year",
+      "someday": "Someday"
+    },
+    "bucketsShort": {
+      "week": "W",
+      "month": "M",
+      "quarter": "Q",
+      "year": "Y",
+      "someday": "—"
+    },
+    "windowDays": "{{elapsed}}d into {{total}}d",
+    "windowPast": "{{n}}d past the window",
+    "windowSoon": "{{n}}d left",
+    "somedayCaption": "No deadline — surface when ready."
+  },
   "task": {
     "management": "Task management",
     "list": "Task list",

@@ -102,12 +102,14 @@ export interface Task {
   dueHard?: string; // ISO date-time
   /** Fuzzy "finish-in-about" bucket. See TimeframeBucket above. Optional;
    *  most tasks won't have one. Setting this is orthogonal to dueSoft /
-   *  dueHard — a task can have both a hard date and a timeframe bucket. */
-  timeframeBucket?: TimeframeBucket;
+   *  dueHard — a task can have both a hard date and a timeframe bucket.
+   *  When sending a patch, `null` clears the bucket (and the anchor with
+   *  it); `undefined` leaves both fields alone. */
+  timeframeBucket?: TimeframeBucket | null;
   /** When the bucket started counting. Defaults to createdAt on the server
    *  when timeframeBucket is set without an explicit anchor. The user can
    *  re-anchor (e.g. "bump back into this week") by sending a fresh value. */
-  timeframeAnchor?: string; // ISO date-time
+  timeframeAnchor?: string | null; // ISO date-time
   milestoneId?: ID;
   /** Parent task — when present, this task is rendered indented under the
    *  parent in the project task list. Single-parent tree, max depth 3.

@@ -5047,6 +5047,22 @@ h4 {
   --rd-st-review-tint:  oklch(0.95 0.04 290);
   --rd-st-done-tint:    oklch(0.95 0.04 145);
 
+  /* Timeframe bucket palette — warm-to-cool gradient running from
+     'this week' (most immediate, warmest) to 'this year' (longest,
+     coolest). 'someday' is intentionally neutral gray — it shouldn't
+     compete visually with dated buckets. Each bucket has a tint for
+     chip backgrounds. */
+  --tf-week:    oklch(0.62 0.18 28);
+  --tf-month:   oklch(0.70 0.14 55);
+  --tf-quarter: oklch(0.72 0.13 95);
+  --tf-year:    oklch(0.62 0.12 145);
+  --tf-someday: oklch(0.62 0.01 85);
+  --tf-week-tint:    oklch(0.95 0.04 28);
+  --tf-month-tint:   oklch(0.96 0.04 55);
+  --tf-quarter-tint: oklch(0.96 0.04 95);
+  --tf-year-tint:    oklch(0.96 0.04 145);
+  --tf-someday-tint: oklch(0.95 0.005 85);
+
   /* Project type colors (new — drives the gallery card's top stripe and
      the pdot in pinned-project list). */
   --type-research: oklch(0.55 0.18 295);
@@ -6758,6 +6774,18 @@ body {
   --rd-st-review-tint:  oklch(0.26 0.06 290);
   --rd-st-done-tint:    oklch(0.26 0.06 145);
 
+  /* Timeframe bucket palette — dark theme (lifted L, deeper tints). */
+  --tf-week:    oklch(0.72 0.18 28);
+  --tf-month:   oklch(0.78 0.14 55);
+  --tf-quarter: oklch(0.80 0.13 95);
+  --tf-year:    oklch(0.72 0.13 145);
+  --tf-someday: oklch(0.65 0.01 85);
+  --tf-week-tint:    oklch(0.26 0.06 28);
+  --tf-month-tint:   oklch(0.26 0.06 55);
+  --tf-quarter-tint: oklch(0.26 0.06 95);
+  --tf-year-tint:    oklch(0.26 0.06 145);
+  --tf-someday-tint: oklch(0.26 0.005 85);
+
   /* Project type colors — slightly more saturated for dark */
   --type-research: oklch(0.72 0.20 295);
   --type-daily:    oklch(0.72 0.16 155);
@@ -7136,3 +7164,73 @@ body {
   /* Touch devices: surface the drag handle that's hover-only on desktop. */
   .rd-flow-card .rd-drag-handle { opacity: 0.5; }
 }
+
+/* ---------- Timeframe bucket: picker chips + read-only badge ----------- */
+.rd-tf-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.rd-tf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--rd-line);
+  background: var(--rd-surface);
+  font-size: 12px;
+  color: var(--rd-ink-2);
+  cursor: pointer;
+  user-select: none;
+  transition: background 80ms, color 80ms, border-color 80ms;
+}
+.rd-tf-chip:hover {
+  border-color: var(--rd-line-strong);
+}
+.rd-tf-chip[aria-pressed="true"] {
+  color: var(--rd-ink);
+  font-weight: 600;
+}
+.rd-tf-chip[aria-pressed="true"][data-bucket="week"]    { background: var(--tf-week-tint);    border-color: var(--tf-week); }
+.rd-tf-chip[aria-pressed="true"][data-bucket="month"]   { background: var(--tf-month-tint);   border-color: var(--tf-month); }
+.rd-tf-chip[aria-pressed="true"][data-bucket="quarter"] { background: var(--tf-quarter-tint); border-color: var(--tf-quarter); }
+.rd-tf-chip[aria-pressed="true"][data-bucket="year"]    { background: var(--tf-year-tint);    border-color: var(--tf-year); }
+.rd-tf-chip[aria-pressed="true"][data-bucket="someday"] { background: var(--tf-someday-tint); border-color: var(--tf-someday); }
+.rd-tf-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.rd-tf-chip-dot[data-bucket="week"]    { background: var(--tf-week); }
+.rd-tf-chip-dot[data-bucket="month"]   { background: var(--tf-month); }
+.rd-tf-chip-dot[data-bucket="quarter"] { background: var(--tf-quarter); }
+.rd-tf-chip-dot[data-bucket="year"]    { background: var(--tf-year); }
+.rd-tf-chip-dot[data-bucket="someday"] { background: var(--tf-someday); }
+
+/* Read-only badge — two variants:
+   .rd-tf-badge          = compact, dot + short label (for cards / rows)
+   .rd-tf-badge--full    = pill with full label (for the drawer + lists) */
+.rd-tf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--rd-ink-3);
+  white-space: nowrap;
+}
+.rd-tf-badge .rd-tf-chip-dot { width: 6px; height: 6px; }
+.rd-tf-badge--full {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--rd-surface-2);
+}
+.rd-tf-badge.is-past { color: var(--rd-st-blocked); }
+.rd-tf-countdown {
+  font-size: 11.5px;
+  color: var(--rd-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.rd-tf-countdown.is-past { color: var(--rd-st-blocked); }

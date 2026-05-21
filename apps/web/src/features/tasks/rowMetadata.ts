@@ -29,10 +29,18 @@
 // - TimeframeBadge always renders in `variant="compact"` on row
 //   surfaces. The `variant="full"` is reserved for the details drawer
 //   and the briefing card where horizontal space is generous.
-// - "Size + intensity render the same magnitude today" (Round 15 audit
-//   #8) is a separate, unresolved design question. Until intensity
-//   gets its own column on Task, both render — they're treated as
-//   semantically distinct even though the values currently track.
+// - Size and intensity originally rendered the same magnitude on every
+//   row (intensity is size-derived when task.intensity is null). Round
+//   16 changed IntensityBars to render *only* when the user has
+//   explicitly overridden intensity (task.intensity != null). So the
+//   bars now signal "this task has a deliberate non-default load"
+//   rather than duplicating the size chip. Edit surfaces (inline
+//   editor, drawer) pass `alwaysRender` so the bars stay visible while
+//   editing.
+// - Row surfaces should render size + intensity via the shared
+//   `<SizeChip>` and `<IntensityBars>` atoms in features/tasks/. The
+//   manual `<span className="rd-size-chip">…` and 5x `<span className=
+//   "rd-bar" />` markup is a drift hotspot.
 // - This file is documentation-first; the exported constant is a
 //   defensive runtime guard against drift but should be referenced by
 //   any new row surface (e.g. via a comment) rather than blindly

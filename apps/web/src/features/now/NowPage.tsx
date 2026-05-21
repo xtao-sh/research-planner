@@ -15,6 +15,8 @@ import { useToast } from '../../components/Toast';
 import { computeTimeframeStatus, groupTasksByTimeframe } from '../tasks/timeframe';
 import { TimeframeBadge } from '../tasks/TimeframeBadge';
 import { StaleBadge } from '../tasks/StaleBadge';
+import { SizeChip } from '../tasks/SizeChip';
+import { IntensityBars } from '../tasks/IntensityBars';
 import {
   briefingLastSeenKey,
   countWeekPastWindow,
@@ -1046,7 +1048,6 @@ function NowTaskRow({
   const { t } = useTranslation();
   const meta = getProjectTypeMeta(project.type);
   const isFocused = Boolean(task.focusedAt);
-  const intensity = deriveIntensity(task);
 
   // (Previously computed `daysAgo` locally for the rightmost stale-text
   // slot — removed in Round 15. StaleBadge covers both doing- and blocked-
@@ -1141,16 +1142,8 @@ function NowTaskRow({
               <span className="rd-sep">·</span>
             </>
           )}
-          <span className="rd-size-chip">
-            {(task.size ?? 'm').toUpperCase()}
-          </span>
-          <span className="rd-intensity" data-level={intensity}>
-            <span className="rd-bar" />
-            <span className="rd-bar" />
-            <span className="rd-bar" />
-            <span className="rd-bar" />
-            <span className="rd-bar" />
-          </span>
+          <SizeChip size={task.size} />
+          <IntensityBars task={task} />
           {task.timeframeBucket && (
             <>
               <span className="rd-sep">·</span>

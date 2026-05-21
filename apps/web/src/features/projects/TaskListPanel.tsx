@@ -22,9 +22,10 @@ import type { ScheduleResult, Task, TimeframeBucket } from '@rp/shared';
 import { TIMEFRAME_BUCKETS } from '@rp/shared';
 import { StaleBadge } from '../tasks/StaleBadge';
 import { TimeframeBadge } from '../tasks/TimeframeBadge';
+import { SizeChip } from '../tasks/SizeChip';
+import { IntensityBars } from '../tasks/IntensityBars';
 import { FocusPinButton } from '../tasks/FocusPinButton';
 import { STATUS_COLOR } from '../tasks/statusMeta';
-import { deriveIntensity } from '../../shared/intensity';
 
 interface TaskListPanelProps {
   tasks: Task[]; // already sorted by priority
@@ -744,20 +745,8 @@ function SortableTaskRow({
                   right position rather than appending — drift between
                   surfaces is the single biggest UX-consistency bug. */}
               <span className="task-meta-cluster">
-                <span className="rd-size-chip" aria-label={t(`task.size.${tk.size ?? 'm'}` as const)}>
-                  {(tk.size ?? 'm').toUpperCase()}
-                </span>
-                <span
-                  className="rd-intensity"
-                  data-level={deriveIntensity(tk)}
-                  aria-label={`intensity ${deriveIntensity(tk)}`}
-                >
-                  <span className="rd-bar" />
-                  <span className="rd-bar" />
-                  <span className="rd-bar" />
-                  <span className="rd-bar" />
-                  <span className="rd-bar" />
-                </span>
+                <SizeChip size={tk.size} />
+                <IntensityBars task={tk} />
                 {tk.timeframeBucket && (
                   <TimeframeBadge
                     bucket={tk.timeframeBucket}

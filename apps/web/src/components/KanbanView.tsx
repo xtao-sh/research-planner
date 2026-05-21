@@ -24,8 +24,9 @@ import { CSS } from '@dnd-kit/utilities';
 import type { Task } from '@rp/shared';
 import { StaleBadge } from '../features/tasks/StaleBadge';
 import { FocusPinButton } from '../features/tasks/FocusPinButton';
-import { deriveIntensity } from '../shared/intensity';
 import { TimeframeBadge } from '../features/tasks/TimeframeBadge';
+import { SizeChip } from '../features/tasks/SizeChip';
+import { IntensityBars } from '../features/tasks/IntensityBars';
 
 interface KanbanViewProps {
   tasks: Task[];
@@ -236,13 +237,11 @@ export function KanbanView({
                 </div>
               ) : (
                 columnTasks.map((task) => {
-                  const intensity = deriveIntensity(task);
                   const isFocused = Boolean(task.focusedAt);
                   return (
                     <SortableFlowCard
                       key={task.id}
                       task={task}
-                      intensity={intensity}
                       isFocused={isFocused}
                       typeLabel={getTypeLabel(task.type)}
                       dueHardLabel={t('task.dueHard')}
@@ -275,19 +274,8 @@ export function KanbanView({
           >
             <div className="rd-title">{activeTask.title}</div>
             <div className="rd-foot">
-              <span className="rd-size-chip">
-                {(activeTask.size || 'm').toUpperCase()}
-              </span>
-              <span
-                className="rd-intensity"
-                data-level={deriveIntensity(activeTask)}
-              >
-                <span className="rd-bar" />
-                <span className="rd-bar" />
-                <span className="rd-bar" />
-                <span className="rd-bar" />
-                <span className="rd-bar" />
-              </span>
+              <SizeChip size={activeTask.size} />
+              <IntensityBars task={activeTask} />
             </div>
           </div>
         ) : null}
@@ -346,7 +334,6 @@ function KanbanColumn({
 
 interface SortableFlowCardProps {
   task: Task;
-  intensity: number;
   isFocused: boolean;
   typeLabel: string;
   dueHardLabel: string;
@@ -363,7 +350,6 @@ interface SortableFlowCardProps {
 const SortableFlowCard = React.memo(
   function SortableFlowCard({
   task,
-  intensity,
   isFocused,
   typeLabel,
   dueHardLabel,
@@ -408,18 +394,8 @@ const SortableFlowCard = React.memo(
           in features/tasks/rowMetadata.ts. Keep new atoms slotted into
           the right position rather than appending. */}
       <div className="rd-foot">
-        <span className="rd-size-chip">{(task.size || 'm').toUpperCase()}</span>
-        <span
-          className="rd-intensity"
-          data-level={intensity}
-          aria-label={`intensity ${intensity}`}
-        >
-          <span className="rd-bar" />
-          <span className="rd-bar" />
-          <span className="rd-bar" />
-          <span className="rd-bar" />
-          <span className="rd-bar" />
-        </span>
+        <SizeChip size={task.size} />
+        <IntensityBars task={task} />
         {task.timeframeBucket && (
           <TimeframeBadge
             bucket={task.timeframeBucket}
@@ -472,7 +448,6 @@ const SortableFlowCard = React.memo(
   },
   (a, b) =>
     a.task === b.task &&
-    a.intensity === b.intensity &&
     a.isFocused === b.isFocused &&
     a.dndDisabled === b.dndDisabled &&
     a.hideForOverlay === b.hideForOverlay &&

@@ -14,8 +14,9 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import type { Task } from '@rp/shared';
-import { deriveIntensity } from '../../shared/intensity';
 import { TimeframeBadge } from '../tasks/TimeframeBadge';
+import { SizeChip } from '../tasks/SizeChip';
+import { IntensityBars } from '../tasks/IntensityBars';
 
 interface TaskTreeDrawerProps {
   open: boolean;
@@ -344,7 +345,6 @@ function TreeNode({
       : 0;
   const isBlocked = task.status === 'blocked';
   const showStuck = isBlocked || stuckDays >= 7;
-  const intensityLevel = deriveIntensity(task);
 
   // Drag source
   const draggable = useDraggable({ id: task.id, disabled: !dragEnabled });
@@ -405,16 +405,8 @@ function TreeNode({
           {t(`task.statusLabels.${task.status}`)}
         </span>
         <span className="rd-tree-title">{task.title}</span>
-        <span className="rd-size-chip">
-          {(task.size || 'm').toUpperCase()}
-        </span>
-        <span className="rd-intensity" data-level={intensityLevel}>
-          <span className="rd-bar" />
-          <span className="rd-bar" />
-          <span className="rd-bar" />
-          <span className="rd-bar" />
-          <span className="rd-bar" />
-        </span>
+        <SizeChip size={task.size} />
+        <IntensityBars task={task} />
         {/* Atoms ordered per the canonical row schema documented in
             features/tasks/rowMetadata.ts: size · intensity · timeframe ·
             stuck (stale) · focus-pin. */}

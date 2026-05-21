@@ -7,6 +7,7 @@ import { searchAll } from '../../api/search';
 import { SkeletonList } from '../../components/Skeleton';
 import { TimeframeBadge } from '../tasks/TimeframeBadge';
 import { StaleBadge } from '../tasks/StaleBadge';
+import { SizeChip } from '../tasks/SizeChip';
 
 /**
  * Splits a #hashtag-aware string into React nodes (tags become
@@ -262,9 +263,7 @@ export function SearchPage() {
                             <span className="rd-sep">·</span>
                           </>
                         )}
-                        <span className="rd-size-chip">
-                          {(task.size ?? 'm').toUpperCase()}
-                        </span>
+                        <SizeChip size={task.size} />
                         {task.timeframeBucket && (
                           <>
                             <span className="rd-sep">·</span>

@@ -93,37 +93,6 @@ export function NowPage() {
     [allTasks]
   );
 
-  // Group non-done tasks with a timeframe bucket by bucket. Tasks without
-  // a bucket are excluded; the section as a whole hides if nothing is
-  // bucketed (don't pay screen real-estate for a feature the user hasn't
-  // opted into). Tasks already in earlier state sections (top-of-mind,
-  // doing, blocked) deliberately *also* appear here — it's a different
-  // lens, not a different list.
-  const timeframeGroups = useMemo(() => {
-    // groupTasksByTimeframe operates on Task[], but we need TaskWithProject[]
-    // here. Bridge by computing once over the bare tasks then re-resolving
-    // via the hoisted projectById Map (built when `projects` changes, not on
-    // every task tick).
-    const taskGroups = groupTasksByTimeframe(allTasks.map((x) => x.task));
-    const out: Record<TimeframeBucket, TaskWithProject[]> = {
-      week: [],
-      month: [],
-      quarter: [],
-      year: [],
-      someday: [],
-    };
-    for (const bucket of Object.keys(taskGroups) as TimeframeBucket[]) {
-      for (const tk of taskGroups[bucket]) {
-        const proj = projectById.get(tk.projectId);
-        if (proj) out[bucket].push({ task: tk, project: proj });
-      }
-    }
-    return out;
-  }, [allTasks, projectById]);
-  const hasAnyTimeframed = useMemo(
-    () => Object.values(timeframeGroups).some((arr) => arr.length > 0),
-    [timeframeGroups]
-  );
   const focusedTasks = useMemo(
     () =>
       allTasks
@@ -146,6 +115,44 @@ export function NowPage() {
     new Set(doingTasks.map((x) => x.project.id)).size <= 1;
   const blockedSingleProject =
     new Set(blockedTasks.map((x) => x.project.id)).size <= 1;
+
+  // Round 16 design call: a task already surfaced in an upstream
+  // state-based section (Top of Mind / Doing / Blocked) is hidden from
+  // its bucket section. The bucket section's purpose becomes "bucketed
+  // tasks not currently on the radar" — typically todo/review work with
+  // future-time commitment. The state-based row already carries the
+  // bucket badge inline, so no info is lost; just no row duplication.
+  const upstreamCoveredIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const x of focusedTasks) set.add(x.task.id);
+    for (const x of doingTasks) set.add(x.task.id);
+    for (const x of blockedTasks) set.add(x.task.id);
+    return set;
+  }, [focusedTasks, doingTasks, blockedTasks]);
+
+  // Group non-done, not-already-shown tasks with a timeframe bucket.
+  const timeframeGroups = useMemo(() => {
+    const taskGroups = groupTasksByTimeframe(allTasks.map((x) => x.task));
+    const out: Record<TimeframeBucket, TaskWithProject[]> = {
+      week: [],
+      month: [],
+      quarter: [],
+      year: [],
+      someday: [],
+    };
+    for (const bucket of Object.keys(taskGroups) as TimeframeBucket[]) {
+      for (const tk of taskGroups[bucket]) {
+        if (upstreamCoveredIds.has(tk.id)) continue;
+        const proj = projectById.get(tk.projectId);
+        if (proj) out[bucket].push({ task: tk, project: proj });
+      }
+    }
+    return out;
+  }, [allTasks, projectById, upstreamCoveredIds]);
+  const hasAnyTimeframed = useMemo(
+    () => Object.values(timeframeGroups).some((arr) => arr.length > 0),
+    [timeframeGroups]
+  );
 
   // Stable identities — every NowTaskRow gets these as props and would
   // otherwise rebind on every WS-event tick. Wrapped here so any future

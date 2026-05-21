@@ -803,7 +803,30 @@
     "quickCapturePrompt": "灵光一现？立刻记下。",
     "quickCaptureCta": "+ 新想法",
     "briefingDefaultHeadline": "回到中断的地方继续。",
-    "loadEstimateRange": "{{o}}–{{p}} 时（最可能 {{m}}）"
+    "loadEstimateRange": "{{o}}–{{p}} 时（最可能 {{m}}）",
+    "briefing": {
+      "sinceLastVisit": "上次以来",
+      "movedSummary": "开始 {{toDoing}} · 完成 {{toDone}} · 阻塞 {{toBlocked}}",
+      "movedDoingOnly": "{{n}} 项进入「进行中」",
+      "movedDoneOnly": "{{n}} 项已完成",
+      "movedBlockedOnly": "{{n}} 项新被阻塞",
+      "lastShipped": "刚完成：「{{title}}」",
+      "newTasks": "新增",
+      "newTasksList": "{{titles}}",
+      "newTasksMany": "新增了 {{n}} 项任务",
+      "pastWeekWindow": "{{n}} 项「本周」任务已超出窗口——重新定时？",
+      "pastWeekWindowPlural": "{{n}} 项「本周」任务已超出窗口——重新定时？",
+      "stuck": "卡住",
+      "stuckBoth": "{{doing}} 项进行中超 7 天 · {{blocked}} 项阻塞",
+      "stuckDoingOnly": "{{n}} 项进行中已超 7 天",
+      "stuckBlockedOnly": "{{n}} 项被阻塞",
+      "stuckLone": "「{{title}}」",
+      "capacity": "容量",
+      "overCapacity": "进行中强度 {{used}} > {{budget}}——先卸下一项再添加。",
+      "openThreads": "未理顺",
+      "openThreadsOne": "1 条未归档笔记",
+      "openThreadsMany": "{{n}} 条未归档笔记"
+    }
   },
   "inbox": {
     "emptyTitle": "收件箱空",

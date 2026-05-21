@@ -807,7 +807,30 @@
     "quickCapturePrompt": "Caught mid-thought? Drop it now.",
     "quickCaptureCta": "+ new thought",
     "briefingDefaultHeadline": "Pick up where you left off.",
-    "loadEstimateRange": "{{o}}–{{p}}h (likely {{m}})"
+    "loadEstimateRange": "{{o}}–{{p}}h (likely {{m}})",
+    "briefing": {
+      "sinceLastVisit": "Since last visit",
+      "movedSummary": "{{toDoing}} started · {{toDone}} completed · {{toBlocked}} blocked",
+      "movedDoingOnly": "{{n}} moved to doing",
+      "movedDoneOnly": "{{n}} completed",
+      "movedBlockedOnly": "{{n}} newly blocked",
+      "lastShipped": "Last shipped: «{{title}}»",
+      "newTasks": "New",
+      "newTasksList": "{{titles}}",
+      "newTasksMany": "{{n}} new tasks added",
+      "pastWeekWindow": "{{n}} week-bucket task past its window — re-bucket?",
+      "pastWeekWindowPlural": "{{n}} week-bucket tasks past their window — re-bucket?",
+      "stuck": "Stuck",
+      "stuckBoth": "{{doing}} in progress >7d · {{blocked}} blocked",
+      "stuckDoingOnly": "{{n}} sitting in progress >7d",
+      "stuckBlockedOnly": "{{n}} blocked",
+      "stuckLone": "«{{title}}»",
+      "capacity": "Capacity",
+      "overCapacity": "Doing intensity {{used}} > {{budget}} — drop one before adding more.",
+      "openThreads": "Open threads",
+      "openThreadsOne": "1 unfiled note",
+      "openThreadsMany": "{{n}} unfiled notes"
+    }
   },
   "inbox": {
     "emptyTitle": "Inbox is empty",

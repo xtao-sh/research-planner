@@ -1,18 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { Project, Task, TimeframeBucket } from '@rp/shared';
+import type { Note, Project, Task, TimeframeBucket } from '@rp/shared';
 import { TIMEFRAME_BUCKETS } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
 import { getProjectTypeMeta } from '../projects/projectTypes';
 import { setTaskFocus } from '../../api/tasks';
 import { sendJson } from '../../api/client';
+import { getProjectNotes } from '../../api/notes';
 import { STATUS_COLOR, nextStatus } from '../tasks/statusMeta';
 import { deriveIntensity } from '../../shared/intensity';
 import { useIntensityBudget } from '../settings/settingsStore';
 import { useToast } from '../../components/Toast';
 import { computeTimeframeStatus, groupTasksByTimeframe } from '../tasks/timeframe';
 import { TimeframeBadge } from '../tasks/TimeframeBadge';
+import {
+  briefingLastSeenKey,
+  countWeekPastWindow,
+  resolveLastVisitMs,
+  summarizeMovement,
+  summarizeOpenThreads,
+  summarizeStuck,
+  sumDoingIntensity,
+} from './briefing';
 
 interface TaskWithProject {
   task: Task;
@@ -665,6 +675,7 @@ function NowBriefingCard({
 }) {
   const { t } = useTranslation();
   const meta = getProjectTypeMeta(project.type);
+  const budget = useIntensityBudget();
 
   const [dismissed, setDismissed] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -686,6 +697,50 @@ function NowBriefingCard({
       );
     } catch {
       setDismissed(false);
+    }
+  }, [project.id]);
+
+  // Project-specific notes for the open-threads cell. The /now context
+  // doesn't pre-fetch project notes (only the workspace inbox), so we go
+  // direct here. Re-fetch on project change. Errors silently degrade to
+  // "no open threads" so the rest of the card still renders.
+  const [projectNotes, setProjectNotes] = useState<Note[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    if (!project.id) return;
+    void (async () => {
+      try {
+        const ns = await getProjectNotes(project.id);
+        if (!cancelled) setProjectNotes(ns);
+      } catch {
+        if (!cancelled) setProjectNotes([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [project.id]);
+
+  // Resolve the lastVisit anchor once per project. Pull from localStorage
+  // (set on prior visits) or fall back to project.updatedAt − 14d. Memoized
+  // so movement summary is stable across re-renders within the same visit.
+  const lastVisitMs = useMemo(
+    () => resolveLastVisitMs(project.id, project.updatedAt, 14),
+    [project.id, project.updatedAt]
+  );
+
+  // Stamp this visit on the next-visit anchor. Run once when the card first
+  // shows (effectively on mount) — we deliberately do NOT update on every
+  // re-render so the comparison stays meaningful within the session.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        briefingLastSeenKey(project.id),
+        String(Date.now())
+      );
+    } catch {
+      /* ignore */
     }
   }, [project.id]);
 
@@ -729,6 +784,104 @@ function NowBriefingCard({
     ? `"${project.description.length > 110 ? `${project.description.slice(0, 110)}…` : project.description}"`
     : null;
 
+  // --- Enriched briefing fields (PRD: "context on re-entry"). Each is null
+  // when there's nothing useful to surface — we skip rendering the cell
+  // entirely rather than show "0 tasks moved".
+
+  // Movement since last visit. Three sub-lines: aggregate counts, last
+  // shipped task title, freshly-created tasks.
+  const movement = summarizeMovement(tasks, lastVisitMs);
+  const movementLines: string[] = [];
+  if (movement) {
+    const { toDoing, toDone, toBlocked } = movement;
+    const moveCount = (toDoing > 0 ? 1 : 0) + (toDone > 0 ? 1 : 0) + (toBlocked > 0 ? 1 : 0);
+    if (moveCount >= 2) {
+      movementLines.push(
+        t('now.briefing.movedSummary', { toDoing, toDone, toBlocked })
+      );
+    } else if (toDoing > 0) {
+      movementLines.push(t('now.briefing.movedDoingOnly', { n: toDoing }));
+    } else if (toDone > 0) {
+      movementLines.push(t('now.briefing.movedDoneOnly', { n: toDone }));
+    } else if (toBlocked > 0) {
+      movementLines.push(t('now.briefing.movedBlockedOnly', { n: toBlocked }));
+    }
+    if (movement.lastShippedTitle) {
+      movementLines.push(
+        t('now.briefing.lastShipped', { title: movement.lastShippedTitle })
+      );
+    }
+  }
+  // New tasks rendered as a separate cell — count or list, never both.
+  const newTasksText = (() => {
+    if (!movement) return null;
+    if (movement.newTaskTitles && movement.newTaskTitles.length > 0) {
+      return t('now.briefing.newTasksList', {
+        titles: movement.newTaskTitles.map((tt) => `«${tt}»`).join(', '),
+      });
+    }
+    if (movement.newTaskCount > 0) {
+      return t('now.briefing.newTasksMany', { n: movement.newTaskCount });
+    }
+    return null;
+  })();
+
+  // Past-window week-bucket tasks.
+  const pastWeek = countWeekPastWindow(tasks);
+  const pastWeekText = pastWeek > 0
+    ? t(
+        pastWeek === 1
+          ? 'now.briefing.pastWeekWindow'
+          : 'now.briefing.pastWeekWindowPlural',
+        { n: pastWeek }
+      )
+    : null;
+
+  // Stuck — doing >7d or blocked.
+  const stuck = summarizeStuck(tasks);
+  const stuckText = (() => {
+    if (!stuck) return null;
+    if (stuck.loneTitle) return t('now.briefing.stuckLone', { title: stuck.loneTitle });
+    if (stuck.doingStuckCount > 0 && stuck.blockedCount > 0) {
+      return t('now.briefing.stuckBoth', {
+        doing: stuck.doingStuckCount,
+        blocked: stuck.blockedCount,
+      });
+    }
+    if (stuck.doingStuckCount > 0) {
+      return t('now.briefing.stuckDoingOnly', { n: stuck.doingStuckCount });
+    }
+    return t('now.briefing.stuckBlockedOnly', { n: stuck.blockedCount });
+  })();
+
+  // Over-capacity warning. Skipped when within budget.
+  const doingIntensity = sumDoingIntensity(tasks);
+  const overCapacityText = doingIntensity > budget
+    ? t('now.briefing.overCapacity', { used: doingIntensity, budget })
+    : null;
+
+  // Open project-notes from the last 14d.
+  const openThreads = summarizeOpenThreads(projectNotes);
+  const openThreadsText = (() => {
+    if (!openThreads) return null;
+    const head =
+      openThreads.count === 1
+        ? t('now.briefing.openThreadsOne')
+        : t('now.briefing.openThreadsMany', { n: openThreads.count });
+    return openThreads.snippet ? `${head} · "${openThreads.snippet}"` : head;
+  })();
+
+  const hasAnyCell =
+    lastActivityText ||
+    looseEndText ||
+    openThoughtText ||
+    movementLines.length > 0 ||
+    newTasksText ||
+    pastWeekText ||
+    stuckText ||
+    overCapacityText ||
+    openThreadsText;
+
   return (
     <section
       className="rd-briefing"
@@ -757,18 +910,60 @@ function NowBriefingCard({
         {t('briefing.title')} · {project.name}
       </div>
       <h2>{lastTouchedRel}</h2>
-      {(lastActivityText || looseEndText || openThoughtText) && (
+      {hasAnyCell && (
         <div className="rd-briefing-grid">
+          {movementLines.length > 0 && (
+            <div className="rd-briefing-cell">
+              <div className="rd-lbl">{t('now.briefing.sinceLastVisit')}</div>
+              <div className="rd-val">
+                {movementLines.map((line, i) => (
+                  <div key={i} style={i > 0 ? { marginTop: 2 } : undefined}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {newTasksText && (
+            <div className="rd-briefing-cell">
+              <div className="rd-lbl">{t('now.briefing.newTasks')}</div>
+              <div className="rd-val">{newTasksText}</div>
+            </div>
+          )}
           {lastActivityText && (
             <div className="rd-briefing-cell">
               <div className="rd-lbl">{t('briefing.recentActivity')}</div>
               <div className="rd-val">{lastActivityText}</div>
             </div>
           )}
-          {looseEndText && (
+          {stuckText && (
+            <div className="rd-briefing-cell">
+              <div className="rd-lbl">{t('now.briefing.stuck')}</div>
+              <div className="rd-val">{stuckText}</div>
+            </div>
+          )}
+          {looseEndText && !stuckText && (
             <div className="rd-briefing-cell">
               <div className="rd-lbl">{t('briefing.looseEnd')}</div>
               <div className="rd-val">{looseEndText}</div>
+            </div>
+          )}
+          {pastWeekText && (
+            <div className="rd-briefing-cell">
+              <div className="rd-lbl">{t('timeframe.buckets.week')}</div>
+              <div className="rd-val">{pastWeekText}</div>
+            </div>
+          )}
+          {overCapacityText && (
+            <div className="rd-briefing-cell">
+              <div className="rd-lbl">{t('now.briefing.capacity')}</div>
+              <div className="rd-val">{overCapacityText}</div>
+            </div>
+          )}
+          {openThreadsText && (
+            <div className="rd-briefing-cell">
+              <div className="rd-lbl">{t('now.briefing.openThreads')}</div>
+              <div className="rd-val">{openThreadsText}</div>
             </div>
           )}
           {openThoughtText && (

@@ -737,9 +737,13 @@ function SortableTaskRow({
                   {t('task.subtaskCount', { n: childCount })}
                 </span>
               )}
+              {/* Metadata cluster — atoms ordered per the canonical row
+                  schema documented in features/tasks/rowMetadata.ts:
+                  size · intensity · timeframe · plan/due · CP · risk ·
+                  stale · focus-pin. Keep new atoms slotted into the
+                  right position rather than appending — drift between
+                  surfaces is the single biggest UX-consistency bug. */}
               <span className="task-meta-cluster">
-                {/* Size chip + intensity bars: same atoms the Flow Board uses
-                    so a task reads visually identical across both views. */}
                 <span className="rd-size-chip" aria-label={t(`task.size.${tk.size ?? 'm'}` as const)}>
                   {(tk.size ?? 'm').toUpperCase()}
                 </span>
@@ -754,6 +758,13 @@ function SortableTaskRow({
                   <span className="rd-bar" />
                   <span className="rd-bar" />
                 </span>
+                {tk.timeframeBucket && (
+                  <TimeframeBadge
+                    bucket={tk.timeframeBucket}
+                    anchor={tk.timeframeAnchor}
+                    variant="compact"
+                  />
+                )}
                 {plan && (
                   <span className="task-meta-item task-meta-date">
                     {new Date(plan.endPlanned).toLocaleString(i18n.language, {
@@ -785,14 +796,6 @@ function SortableTaskRow({
                   <span className="badge badge-warning" title={t('task.deadlineRisk')}>
                     {t('task.delayed')}
                   </span>
-                )}
-                {tk.timeframeBucket && (
-                  <TimeframeBadge
-                    bucket={tk.timeframeBucket}
-                    anchor={tk.timeframeAnchor}
-                    variant="full"
-                    showCountdown={false}
-                  />
                 )}
                 <StaleBadge task={tk} />
                 <FocusPinButton

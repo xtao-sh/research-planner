@@ -404,6 +404,9 @@ const SortableFlowCard = React.memo(
     >
       <span className="rd-drag-handle" aria-hidden="true">⋮⋮</span>
       <div className="rd-title">{task.title}</div>
+      {/* Card foot atoms ordered per the canonical row schema documented
+          in features/tasks/rowMetadata.ts. Keep new atoms slotted into
+          the right position rather than appending. */}
       <div className="rd-foot">
         <span className="rd-size-chip">{(task.size || 'm').toUpperCase()}</span>
         <span
@@ -417,6 +420,13 @@ const SortableFlowCard = React.memo(
           <span className="rd-bar" />
           <span className="rd-bar" />
         </span>
+        {task.timeframeBucket && (
+          <TimeframeBadge
+            bucket={task.timeframeBucket}
+            anchor={task.timeframeAnchor}
+            variant="compact"
+          />
+        )}
         {task.dueHard && (
           <span
             className="rd-age"
@@ -429,13 +439,6 @@ const SortableFlowCard = React.memo(
               day: '2-digit',
             })}
           </span>
-        )}
-        {task.timeframeBucket && (
-          <TimeframeBadge
-            bucket={task.timeframeBucket}
-            anchor={task.timeframeAnchor}
-            variant="compact"
-          />
         )}
         <StaleBadge task={task} />
         {onToggleFocus && (

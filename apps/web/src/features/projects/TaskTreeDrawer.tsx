@@ -415,12 +415,23 @@ function TreeNode({
           <span className="rd-bar" />
           <span className="rd-bar" />
         </span>
+        {/* Atoms ordered per the canonical row schema documented in
+            features/tasks/rowMetadata.ts: size · intensity · timeframe ·
+            stuck (stale) · focus-pin. */}
         {task.timeframeBucket && (
           <TimeframeBadge
             bucket={task.timeframeBucket}
             anchor={task.timeframeAnchor}
             variant="compact"
           />
+        )}
+        {showStuck && (
+          <span className="rd-tree-stuck">
+            ▲{' '}
+            {isBlocked
+              ? t('tree.stuckBlocked', { n: stuckDays })
+              : t('tree.stuckDoing', { n: stuckDays })}
+          </span>
         )}
         {task.focusedAt && (
           <span
@@ -430,14 +441,6 @@ function TreeNode({
             style={{ color: 'var(--accent)' }}
           >
             ★
-          </span>
-        )}
-        {showStuck && (
-          <span className="rd-tree-stuck">
-            ▲{' '}
-            {isBlocked
-              ? t('tree.stuckBlocked', { n: stuckDays })
-              : t('tree.stuckDoing', { n: stuckDays })}
           </span>
         )}
       </div>

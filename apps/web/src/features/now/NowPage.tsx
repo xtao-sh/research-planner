@@ -1111,6 +1111,12 @@ function NowTaskRow({
 
       <div>
         <div className="rd-title">{task.title}</div>
+        {/* Atoms ordered per the canonical row schema documented in
+            features/tasks/rowMetadata.ts: identity (project tag) ·
+            size · intensity · timeframe · dueDate (here: estimate
+            range) · stale. The focus pin is positioned at the LEADING
+            edge of this row instead of trailing — see the docstring
+            for the deliberate /now exception. */}
         <div className="rd-meta-line">
           {showProject && (
             <>

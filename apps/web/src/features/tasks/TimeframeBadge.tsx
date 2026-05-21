@@ -39,14 +39,27 @@ export function TimeframeBadge({
 
   // Tooltip text — pre-rendered so we don't pass the t function around
   // (its inferred return type explodes when threaded through helpers).
+  // Also reused verbatim as the aria-label so screen-reader users hear the
+  // countdown context that sighted users get from the tooltip (e.g.
+  // "Week · 3d into 7d", "Week · 5d past the window", "Someday · no deadline").
   let title = fullLabel;
   if (status && status.totalDays !== null) {
-    title = `${fullLabel} · ${String(
-      t('timeframe.windowDays', {
-        elapsed: Math.max(0, status.daysElapsed),
-        total: status.totalDays,
-      })
-    )}`;
+    if (status.isPast) {
+      title = `${fullLabel} · ${String(
+        t('timeframe.windowPast', {
+          n: Math.abs(status.daysRemaining ?? 0),
+        })
+      )}`;
+    } else {
+      title = `${fullLabel} · ${String(
+        t('timeframe.windowDays', {
+          elapsed: Math.max(0, status.daysElapsed),
+          total: status.totalDays,
+        })
+      )}`;
+    }
+  } else if (status && bucket === 'someday') {
+    title = `${fullLabel} · ${String(t('timeframe.somedayCaption'))}`;
   }
 
   // Countdown caption — only when requested AND we have anchor-based status.
@@ -74,7 +87,7 @@ export function TimeframeBadge({
         .filter(Boolean)
         .join(' ')}
       data-bucket={bucket}
-      aria-label={fullLabel}
+      aria-label={title}
       title={title}
     >
       <span className="rd-tf-chip-dot" data-bucket={bucket} aria-hidden="true" />

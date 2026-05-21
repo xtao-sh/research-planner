@@ -12,6 +12,7 @@ import { deriveIntensity } from '../../shared/intensity';
 import { useIntensityBudget } from '../settings/settingsStore';
 import { useToast } from '../../components/Toast';
 import { computeTimeframeStatus, groupTasksByTimeframe } from '../tasks/timeframe';
+import { TimeframeBadge } from '../tasks/TimeframeBadge';
 
 interface TaskWithProject {
   task: Task;
@@ -64,6 +65,14 @@ export function NowPage() {
     return out;
   }, [projects, projectTasks]);
 
+  // Hoisted out of `timeframeGroups` below — projects change far less often
+  // than `allTasks` (which churns on every WS event tick), so rebuilding this
+  // Map per-tick was wasted work.
+  const projectById = useMemo(
+    () => new Map<string, Project>(projects.map((p) => [p.id, p])),
+    [projects]
+  );
+
   const doingTasks = useMemo(
     () => allTasks.filter((x) => x.task.status === 'doing'),
     [allTasks]
@@ -81,8 +90,9 @@ export function NowPage() {
   // lens, not a different list.
   const timeframeGroups = useMemo(() => {
     // groupTasksByTimeframe operates on Task[], but we need TaskWithProject[]
-    // here. Bridge by computing once over the bare tasks then re-resolving.
-    const projectById = new Map<string, Project>(projects.map((p) => [p.id, p]));
+    // here. Bridge by computing once over the bare tasks then re-resolving
+    // via the hoisted projectById Map (built when `projects` changes, not on
+    // every task tick).
     const taskGroups = groupTasksByTimeframe(allTasks.map((x) => x.task));
     const out: Record<TimeframeBucket, TaskWithProject[]> = {
       week: [],
@@ -98,7 +108,7 @@ export function NowPage() {
       }
     }
     return out;
-  }, [allTasks, projects]);
+  }, [allTasks, projectById]);
   const hasAnyTimeframed = useMemo(
     () => Object.values(timeframeGroups).some((arr) => arr.length > 0),
     [timeframeGroups]
@@ -916,6 +926,16 @@ function NowTaskRow({
             <span className="rd-bar" />
             <span className="rd-bar" />
           </span>
+          {task.timeframeBucket && (
+            <>
+              <span className="rd-sep">·</span>
+              <TimeframeBadge
+                bucket={task.timeframeBucket}
+                anchor={task.timeframeAnchor}
+                variant="compact"
+              />
+            </>
+          )}
           <span className="rd-sep">·</span>
           <span className="mono" style={{ fontSize: 11 }}>
             {t('now.loadEstimateRange', {

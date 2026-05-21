@@ -3,6 +3,14 @@ import { useTranslation } from 'react-i18next';
 import type { Project, Task } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
 
+// NOTE: Timeframe buckets are deliberately excluded from this radar. The PRD
+// treats them as fuzzy magnitude estimates ("about a month-ish") rather than
+// deadlines; surfacing them here would imply the kind of late-warning UX the
+// bucket model rejects ("you're 2 days past your Week bucket!") and re-create
+// the date-driven anxiety buckets exist to soften. Past-bucket nudges live in
+// /review's weekly observations instead — a calmer, retrospective surface.
+// Only hard/soft due dates (explicit user commitments) belong in the radar.
+
 interface RadarItem {
   task: Task;
   project: Project;

@@ -2687,22 +2687,36 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
     const workspaceIds = memberships.map((m) => m.workspaceId);
     if (workspaceIds.length === 0) return empty;
 
+    // Tag-only mode — when the query starts with '#', skip the title /
+    // body / name / description filters and match only against the tag
+    // and label JSON columns. The `#` is stripped before LIKE'ing so
+    // `#literature` matches against the bare word "literature" inside
+    // the JSON-encoded array. This is the path the user uses when they
+    // know they tagged something but can't remember the title.
+    const isTagMode = q.startsWith('#') && q.length > 1;
+    const tagNeedle = isTagMode ? q.slice(1) : q;
+
     const [projects, tasks, noteRows] = await Promise.all([
-      prisma.project.findMany({
-        where: {
-          workspaceId: { in: workspaceIds },
-          OR: [
-            { name: { contains: q } },
-            { description: { contains: q } },
-          ],
-        },
-        take: 50,
-        select: { id: true, name: true, type: true, description: true },
-      }),
+      // Projects don't have tags — return empty in tag mode.
+      isTagMode
+        ? Promise.resolve([] as Array<{ id: string; name: string; type: string | null; description: string | null }>)
+        : prisma.project.findMany({
+            where: {
+              workspaceId: { in: workspaceIds },
+              OR: [
+                { name: { contains: q } },
+                { description: { contains: q } },
+              ],
+            },
+            take: 50,
+            select: { id: true, name: true, type: true, description: true },
+          }),
       prisma.task.findMany({
         where: {
           project: { workspaceId: { in: workspaceIds } },
-          title: { contains: q },
+          ...(isTagMode
+            ? { labels: { contains: tagNeedle } }
+            : { title: { contains: q } }),
         },
         take: 50,
         select: {
@@ -2724,12 +2738,16 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
       prisma.note.findMany({
         where: {
           workspaceId: { in: workspaceIds },
-          OR: [
-            { body: { contains: q } },
-            // tags is JSON-encoded; substring match against the raw column
-            // is good enough for tag hits like #foo.
-            { tags: { contains: q } },
-          ],
+          ...(isTagMode
+            ? { tags: { contains: tagNeedle } }
+            : {
+                OR: [
+                  { body: { contains: q } },
+                  // tags is JSON-encoded; substring match against the raw
+                  // column catches mid-tag hits in mixed-mode queries.
+                  { tags: { contains: q } },
+                ],
+              }),
         },
         take: 50,
         select: {

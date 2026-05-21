@@ -116,6 +116,12 @@ export function SearchPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults>(EMPTY_RESULTS);
   const [loading, setLoading] = useState(false);
+  // Project-scope filter — null = all projects. Purely client-side
+  // post-filter; the server still returns matches across every workspace
+  // the user is a member of. For a researcher with dozens of projects,
+  // narrowing to one is the difference between "search is useful" and
+  // "search is a wall of unrelated hits."
+  const [projectFilter, setProjectFilter] = useState<string | null>(null);
 
   // 250ms debounce — keep `rawQuery` in sync with the input but only
   // fire a new request when the user pauses typing.
@@ -162,14 +168,40 @@ export function SearchPage() {
   }, [projects]);
 
   const trimmed = query.trim();
+  // `#tag` queries hit the tag-only server path. The visible query
+  // (used for highlighting) has the leading `#` stripped so we don't
+  // mark up every hashtag in the result.
+  const isTagMode = trimmed.startsWith('#') && trimmed.length > 1;
+  const highlightQuery = isTagMode ? trimmed.slice(1) : trimmed;
 
-  const taskMatches = results.tasks;
-  const noteMatches = results.notes;
-  const projectMatches = results.projects;
+  // Post-filter by project when set. Project results themselves only
+  // make sense when no project filter is active (you searched for a
+  // project but now narrowed to one).
+  const taskMatches = projectFilter
+    ? results.tasks.filter((tk) => tk.projectId === projectFilter)
+    : results.tasks;
+  const noteMatches = projectFilter
+    ? results.notes.filter((n) => n.projectId === projectFilter)
+    : results.notes;
+  const projectMatches = projectFilter ? [] : results.projects;
 
   const totalMatches =
     taskMatches.length + noteMatches.length + projectMatches.length;
   const hasResults = totalMatches > 0;
+
+  // Per-project hit counts for the filter chip row. Counts come from
+  // the unfiltered results so the chips don't blink when toggling.
+  const projectHitCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const tk of results.tasks) {
+      counts.set(tk.projectId, (counts.get(tk.projectId) ?? 0) + 1);
+    }
+    for (const n of results.notes) {
+      if (!n.projectId) continue;
+      counts.set(n.projectId, (counts.get(n.projectId) ?? 0) + 1);
+    }
+    return counts;
+  }, [results.tasks, results.notes]);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -182,6 +214,11 @@ export function SearchPage() {
             {loading
               ? t('search.searching', { defaultValue: 'Searching…' })
               : t('search.resultCount', { n: totalMatches })}
+            {isTagMode && (
+              <span style={{ marginLeft: 8, color: 'var(--rd-ink-3)' }}>
+                · {t('search.tagMode')}
+              </span>
+            )}
           </span>
         )}
         <span className="rd-spacer" />
@@ -208,6 +245,53 @@ export function SearchPage() {
             }}
           />
         </div>
+
+        {/* Project filter chips — visible only when there are results
+            from more than one project. "All projects" + one chip per
+            project that has at least one hit, with a hit count. */}
+        {trimmed && !loading && projectHitCounts.size > 1 && (
+          <div
+            className="rd-tf-group"
+            role="group"
+            aria-label={t('search.projectFilter')}
+            style={{ marginTop: 10, marginBottom: 4 }}
+          >
+            <button
+              type="button"
+              className="rd-tf-chip"
+              aria-pressed={projectFilter === null}
+              onClick={() => setProjectFilter(null)}
+            >
+              <span>{t('search.projectFilterAll')}</span>
+            </button>
+            {[...projectHitCounts.entries()]
+              .map(([pid, count]) => {
+                const proj = projectById.get(pid);
+                return proj ? { proj, count } : null;
+              })
+              .filter((x): x is { proj: Project; count: number } => x !== null)
+              .sort((a, b) => b.count - a.count)
+              .map(({ proj, count }) => (
+                <button
+                  key={proj.id}
+                  type="button"
+                  className="rd-tf-chip"
+                  aria-pressed={projectFilter === proj.id}
+                  onClick={() =>
+                    setProjectFilter(projectFilter === proj.id ? null : proj.id)
+                  }
+                >
+                  <span
+                    className="rd-pdot"
+                    style={{ background: `var(--type-${proj.type})` }}
+                    aria-hidden="true"
+                  />
+                  <span>{proj.name}</span>
+                  <span style={{ opacity: 0.7, marginLeft: 2 }}>{count}</span>
+                </button>
+              ))}
+          </div>
+        )}
 
         {!trimmed && (
           <div className="rd-empty-state">
@@ -254,7 +338,7 @@ export function SearchPage() {
                     </span>
                     <div>
                       <div className="rd-title">
-                        {highlightMatches(task.title, query)}
+                        {highlightMatches(task.title, highlightQuery)}
                       </div>
                       <div className="rd-meta-line">
                         {project && (
@@ -335,7 +419,7 @@ export function SearchPage() {
                       {projectName && <span>· {projectName}</span>}
                     </div>
                     <div className="rd-body">
-                      {renderBodyWithHashtagsAndHighlight(note.body, query)}
+                      {renderBodyWithHashtagsAndHighlight(note.body, highlightQuery)}
                     </div>
                   </div>
                 );
@@ -364,12 +448,12 @@ export function SearchPage() {
                 >
                   <div className="rd-proj-card-head">
                     <span className="rd-name">
-                      {highlightMatches(project.name, query)}
+                      {highlightMatches(project.name, highlightQuery)}
                     </span>
                   </div>
                   {project.description && (
                     <div className="rd-proj-card-desc">
-                      {highlightMatches(project.description, query)}
+                      {highlightMatches(project.description, highlightQuery)}
                     </div>
                   )}
                 </button>

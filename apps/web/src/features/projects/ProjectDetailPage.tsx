@@ -242,6 +242,41 @@ export function ProjectDetailPage() {
     }
   }, [eventTick, projectId, debouncedRefresh]);
 
+  // Deep-link support — when the page is opened with ?task=<id>, select
+  // that task once the tasks array has loaded and scroll its row into
+  // view. The Search and Command Palette pages use this to navigate to
+  // a specific task instead of dumping the user at the top of the
+  // task list. The param is consumed (cleared) so a subsequent refresh
+  // doesn't re-trigger the scroll.
+  const taskParam = searchParams.get('task');
+  useEffect(() => {
+    if (!taskParam || tasks.length === 0) return;
+    const found = tasks.find((tk) => tk.id === taskParam);
+    if (!found) return;
+    setSelectedTaskId(taskParam);
+    // Defer the scroll until the row exists in the DOM. requestAnimationFrame
+    // is enough — the tasks state update + render are sync after this effect.
+    requestAnimationFrame(() => {
+      const row = document.querySelector(
+        `[data-task-id="${CSS.escape(taskParam)}"]`
+      );
+      if (row && row instanceof HTMLElement) {
+        row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        // Brief highlight pulse — class is auto-removed after ~1.5s by
+        // the animationend handler in App.css.
+        row.classList.add('rd-row-deeplink-pulse');
+        window.setTimeout(
+          () => row.classList.remove('rd-row-deeplink-pulse'),
+          1500
+        );
+      }
+    });
+    // Strip the param so a later refresh / back-nav doesn't repeat.
+    const next = new URLSearchParams(searchParams);
+    next.delete('task');
+    setSearchParams(next, { replace: true });
+  }, [taskParam, tasks, searchParams, setSearchParams]);
+
   const selectedTask = useMemo(
     () => tasks.find((tk) => tk.id === selectedTaskId) || null,
     [selectedTaskId, tasks]

@@ -654,6 +654,9 @@ function SortableTaskRow({
       ref={setNodeRef}
       style={style}
       data-depth={depth}
+      // data-task-id used by deep-link navigation (e.g. /search → row
+      // scroll-into-view) to locate this row in the DOM.
+      data-task-id={tk.id}
       className={`task-item-enhanced ${isSelected ? 'selected' : ''} ${
         depth > 0 ? 'task-item-subtask' : ''
       } ${hasChildren ? 'task-item-parent' : ''} ${

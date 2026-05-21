@@ -5031,7 +5031,11 @@ h4 {
   /* Ink scale matching the redesign's neutral inks. */
   --rd-ink:    oklch(0.18 0.01 85);
   --rd-ink-2:  oklch(0.38 0.01 85);
-  --rd-ink-3:  oklch(0.55 0.01 85);
+  /* WCAG AA tightening — was 0.55, which produced ~3.6:1 against
+     --rd-surface (white). 52 surfaces use ink-3 for body copy and
+     captions; this bump pushes most into ≥4.5:1 range without
+     visibly darkening the neutral tone. */
+  --rd-ink-3:  oklch(0.50 0.01 85);
   --rd-ink-4:  oklch(0.72 0.01 85);
 
   /* Status palette — uniform chroma with rotating hue. Slightly more
@@ -5070,6 +5074,23 @@ h4 {
   --type-admin:    oklch(0.72 0.14 70);
   --type-personal: oklch(0.62 0.14 245);
   --type-other:    oklch(0.55 0.01 85);
+
+  /* Light-mode tints for the per-type top stripe on .rd-proj-card.
+     Dark mode overrides these in the [data-theme="dark"] block below. */
+  --rd-ptype-tint-research: oklch(0.96 0.03 295);
+  --rd-ptype-tint-daily:    oklch(0.96 0.03 155);
+  --rd-ptype-tint-admin:    oklch(0.96 0.03 70);
+  --rd-ptype-tint-personal: oklch(0.96 0.03 245);
+  --rd-ptype-tint-other:    oklch(0.97 0.01 85);
+
+  /* Briefing card tokens — see the [data-theme="dark"] block for the
+     dark overrides. These values match the previously-inlined oklch
+     constants exactly (peach-warm gradient on light backgrounds). */
+  --rd-briefing-bg-1: oklch(0.97 0.02 85);
+  --rd-briefing-bg-2: oklch(0.95 0.04 70);
+  --rd-briefing-border: oklch(0.85 0.06 70);
+  --rd-briefing-eyebrow: oklch(0.45 0.10 70);
+  --rd-briefing-cell-border: oklch(0.92 0.02 75);
 
   /* Intensity scale — cognitive load 1..5 (low to high). Used by the
      capacity gauge bars and the per-task intensity glyph. */
@@ -5809,10 +5830,13 @@ body {
 }
 
 /* Project type color helpers — applied via inline --rd-ptype */
-.rd-proj-card[data-type="research"] { --rd-ptype: var(--type-research); --rd-ptype-tint: oklch(0.96 0.03 295); }
-.rd-proj-card[data-type="daily"]    { --rd-ptype: var(--type-daily);    --rd-ptype-tint: oklch(0.96 0.03 155); }
-.rd-proj-card[data-type="admin"]    { --rd-ptype: var(--type-admin);    --rd-ptype-tint: oklch(0.96 0.03 70); }
-.rd-proj-card[data-type="personal"] { --rd-ptype: var(--type-personal); --rd-ptype-tint: oklch(0.96 0.03 245); }
+/* The --rd-ptype-tint-* tokens are defined in :root (light) below and
+   overridden in [data-theme="dark"]. Falling back through the type-
+   specific variable keeps these rules a single source of truth. */
+.rd-proj-card[data-type="research"] { --rd-ptype: var(--type-research); --rd-ptype-tint: var(--rd-ptype-tint-research); }
+.rd-proj-card[data-type="daily"]    { --rd-ptype: var(--type-daily);    --rd-ptype-tint: var(--rd-ptype-tint-daily); }
+.rd-proj-card[data-type="admin"]    { --rd-ptype: var(--type-admin);    --rd-ptype-tint: var(--rd-ptype-tint-admin); }
+.rd-proj-card[data-type="personal"] { --rd-ptype: var(--type-personal); --rd-ptype-tint: var(--rd-ptype-tint-personal); }
 .rd-proj-card[data-type="other"]    { --rd-ptype: var(--type-other);    --rd-ptype-tint: var(--rd-bg-sunk); }
 
 /* =========================================================================
@@ -5969,8 +5993,12 @@ body {
    focused project has been idle. Warm gradient + 3 cells of context.
    ========================================================================= */
 .rd-briefing {
-  background: linear-gradient(135deg, oklch(0.97 0.02 85), oklch(0.95 0.04 70));
-  border: 1px solid oklch(0.85 0.06 70);
+  background: linear-gradient(
+    135deg,
+    var(--rd-briefing-bg-1, oklch(0.97 0.02 85)),
+    var(--rd-briefing-bg-2, oklch(0.95 0.04 70))
+  );
+  border: 1px solid var(--rd-briefing-border, oklch(0.85 0.06 70));
   border-radius: 12px;
   padding: 18px 20px;
   position: relative;
@@ -5984,7 +6012,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: 600;
-  color: oklch(0.45 0.10 70);
+  color: var(--rd-briefing-eyebrow, oklch(0.45 0.10 70));
   margin-bottom: 6px;
 }
 .rd-briefing h2 {
@@ -6004,7 +6032,7 @@ body {
   background: var(--rd-surface);
   border-radius: 8px;
   padding: 10px 12px;
-  border: 1px solid oklch(0.92 0.02 75);
+  border: 1px solid var(--rd-briefing-cell-border, oklch(0.92 0.02 75));
 }
 .rd-briefing-cell .rd-lbl {
   font-size: 10.5px;
@@ -6076,7 +6104,21 @@ button.rd-briefing-cell:active {
   border-radius: 12px;
   padding: 10px;
   min-height: 320px;
+  /* Subtle border so the inactive column has a defined edge; widens
+     and tints below when this column is a drop target. */
+  border: 2px solid transparent;
+  transition: border-color 120ms, background 120ms;
 }
+/* Active drop target — tints the column using its own status colour so
+   the user can see *where* the card is about to land. Was previously
+   `background: --rd-surface-2` (a ~2% luminance bump that read as
+   "broken — nothing happened"). The data-status attribute selectors
+   pick the matching tint per column. */
+.rd-flow-col.is-drop-target[data-status="todo"]    { background: var(--rd-st-todo-tint);    border-color: var(--rd-st-todo); }
+.rd-flow-col.is-drop-target[data-status="doing"]   { background: var(--rd-st-doing-tint);   border-color: var(--rd-st-doing); }
+.rd-flow-col.is-drop-target[data-status="blocked"] { background: var(--rd-st-blocked-tint); border-color: var(--rd-st-blocked); }
+.rd-flow-col.is-drop-target[data-status="review"]  { background: var(--rd-st-review-tint);  border-color: var(--rd-st-review); }
+.rd-flow-col.is-drop-target[data-status="done"]    { background: var(--rd-st-done-tint);    border-color: var(--rd-st-done); }
 .rd-flow-col-head {
   display: flex;
   align-items: center;
@@ -6808,7 +6850,9 @@ button.rd-briefing-cell:active {
 
   --rd-ink:    oklch(0.96 0.005 85);
   --rd-ink-2:  oklch(0.78 0.01 85);
-  --rd-ink-3:  oklch(0.62 0.01 85);
+  /* Dark-mode counterpart to the light bump — lift from 0.62 to 0.68
+     so ink-3 on the dark surface clears AA on body copy. */
+  --rd-ink-3:  oklch(0.68 0.01 85);
   --rd-ink-4:  oklch(0.45 0.01 85);
 
   /* Status palette — hold chroma, slightly lift L for legibility on dark */
@@ -6848,6 +6892,25 @@ button.rd-briefing-cell:active {
   --intens-3: oklch(0.68 0.12 65);
   --intens-4: oklch(0.70 0.15 55);
   --intens-5: oklch(0.72 0.17 45);
+
+  /* Briefing card — replace the warm peach gradient with a slightly
+     elevated dark-warm surface so the card still reads as "warmly lit"
+     against the cooler page background without bleeding light tones.
+     Round 17 audit flagged the previous hardcoded oklch() values. */
+  --rd-briefing-bg-1: oklch(0.26 0.02 70);
+  --rd-briefing-bg-2: oklch(0.24 0.03 60);
+  --rd-briefing-border: oklch(0.36 0.04 70);
+  --rd-briefing-eyebrow: oklch(0.74 0.10 70);
+  --rd-briefing-cell-border: oklch(0.30 0.02 75);
+
+  /* Project-type card tints — the light-mode values (oklch 0.96) were
+     pure-white-ish; need dark-page-aware tints so the card's color
+     stripe is visible on the dark gallery. Hue tracks each type. */
+  --rd-ptype-tint-research: oklch(0.26 0.04 295);
+  --rd-ptype-tint-daily:    oklch(0.26 0.04 155);
+  --rd-ptype-tint-admin:    oklch(0.26 0.04 70);
+  --rd-ptype-tint-personal: oklch(0.26 0.04 245);
+  --rd-ptype-tint-other:    oklch(0.26 0.01 85);
 
   --focus: oklch(0.72 0.18 65);
 
@@ -7349,4 +7412,17 @@ button.rd-briefing-cell:active {
   .rd-now-tf-wrap[open] > summary.rd-now-tf-summary::after {
     content: '▴';
   }
+}
+
+/* ---------- Deep-link row pulse ---------- */
+/* Applied for ~1.5s on the row scrolled-to by a `?task=<id>` deep
+   link from /search or the command palette. Brief inset accent border
+   + soft background flash so the user's eye lands on the exact row. */
+@keyframes rd-row-pulse {
+  0%   { background: var(--accent-soft, transparent); box-shadow: inset 0 0 0 2px var(--accent); }
+  60%  { background: var(--accent-soft, transparent); box-shadow: inset 0 0 0 2px var(--accent); }
+  100% { background: transparent; box-shadow: inset 0 0 0 0 transparent; }
+}
+.rd-row-deeplink-pulse {
+  animation: rd-row-pulse 1.4s ease-out 1;
 }

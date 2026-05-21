@@ -318,17 +318,22 @@ export function SearchPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {taskMatches.map((task) => {
                 const project = projectById.get(task.projectId);
+                // Carry the task ID as a query param so the destination
+                // page can scroll/highlight the specific row instead of
+                // dumping the user at the top of a 30-task list.
+                const goToTask = () =>
+                  navigate(`/projects/${task.projectId}?task=${task.id}`);
                 return (
                   <div
                     key={task.id}
                     className="rd-task-row"
                     role="button"
                     tabIndex={0}
-                    onClick={() => navigate(`/projects/${task.projectId}`)}
+                    onClick={goToTask}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        navigate(`/projects/${task.projectId}`);
+                        goToTask();
                       }
                     }}
                   >

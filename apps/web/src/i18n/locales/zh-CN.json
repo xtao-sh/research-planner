@@ -765,6 +765,7 @@
   "now": {
     "errorToggleFocus": "切换焦点失败，请稍后再试。",
     "errorApplyPatch": "更新任务失败，请稍后再试。",
+    "loadingSummary": "正在加载任务…",
     "byTimeframeEyebrow": "按时段",
     "timeframePast": "{{n}} 项超出窗口",
     "title": "今日聚焦",

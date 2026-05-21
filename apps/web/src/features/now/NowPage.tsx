@@ -287,11 +287,16 @@ export function NowPage() {
             {t(greetKey)} <span className="rd-accent">{dateLine}.</span>
           </div>
           <div className="rd-now-sub">
-            {t('now.summary', {
-              doing: doingTasks.length,
-              blocked: blockedTasks.length,
-              focused: focusedShown.length,
-            })}
+            {projectsLen > 0 && !allProjectsCached
+              ? // While the initial fetch is in flight, render a neutral
+                // sub-line instead of "0 doing · 0 blocked · 0 pinned"
+                // which would be a lie before the data arrives.
+                t('now.loadingSummary')
+              : t('now.summary', {
+                  doing: doingTasks.length,
+                  blocked: blockedTasks.length,
+                  focused: focusedShown.length,
+                })}
           </div>
         </div>
 

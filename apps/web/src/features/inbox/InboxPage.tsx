@@ -10,6 +10,7 @@ import {
 import { getProjectTypeMeta } from '../projects/projectTypes';
 import { formatRelative } from '../../utils/time';
 import { useToast } from '../../components/Toast';
+import { SkeletonList } from '../../components/Skeleton';
 
 type RowAction = 'idle' | 'file' | 'promote';
 
@@ -18,9 +19,19 @@ export function InboxPage() {
   const toast = useToast();
   const { inbox, refreshInbox, projects, eventTick } = useAppData();
 
-  // Re-fetch on real-time event tick.
+  // Re-fetch on real-time event tick. `hasFetched` flips true after the
+  // first refresh resolves so we can distinguish "still loading" from
+  // "truly empty" — without it, slow networks show the empty-state UI
+  // for the first 100-500ms (flash-of-empty), which is misleading.
+  const [hasFetched, setHasFetched] = useState(inbox.length > 0);
   useEffect(() => {
-    void refreshInbox();
+    let cancelled = false;
+    void refreshInbox().finally(() => {
+      if (!cancelled) setHasFetched(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [eventTick, refreshInbox]);
 
   const [pendingAction, setPendingAction] = useState<Record<string, RowAction>>({});
@@ -111,17 +122,24 @@ export function InboxPage() {
           <span className="rd-spacer" />
         </div>
         <div className="rd-page">
-          <div className="rd-empty-state">
-            <span className="rd-icon" aria-hidden="true">📥</span>
-            <h3>{t('inbox.emptyTitle')}</h3>
-            <p>{t('inbox.emptySubtitle')}</p>
-            <div className="rd-actions">
-              <span className="rd-kbd">⌘⇧N</span>
-              <span style={{ alignSelf: 'center', fontSize: 12 }}>
-                {t('inbox.captureAnywhereCTA')}
-              </span>
+          {!hasFetched ? (
+            // Inbox hasn't been fetched yet — render a skeleton instead
+            // of the "your inbox is empty" empty state so we don't lie
+            // to the user during the first fetch.
+            <SkeletonList rows={4} />
+          ) : (
+            <div className="rd-empty-state">
+              <span className="rd-icon" aria-hidden="true">📥</span>
+              <h3>{t('inbox.emptyTitle')}</h3>
+              <p>{t('inbox.emptySubtitle')}</p>
+              <div className="rd-actions">
+                <span className="rd-kbd">⌘⇧N</span>
+                <span style={{ alignSelf: 'center', fontSize: 12 }}>
+                  {t('inbox.captureAnywhereCTA')}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </>
     );

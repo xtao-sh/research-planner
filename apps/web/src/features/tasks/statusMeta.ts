@@ -15,9 +15,21 @@ export const STATUS_COLOR: Record<Task['status'], string> = {
 // from the inline editor, not a step in the natural progression).
 const STATUS_CYCLE: Task['status'][] = ['todo', 'doing', 'review', 'done'];
 
+/**
+ * Next status in the one-click cycle.
+ *
+ * Round 17 safety change: `done` is now terminal — clicking the status
+ * pill on a done task is a no-op (returns 'done'). Previously it
+ * wrapped around to 'todo', which meant a single misclick on a done
+ * row silently re-opened the task with no undo. To deliberately
+ * re-open a done task the user must use the drawer / inline editor.
+ */
 export function nextStatus(current: Task['status']): Task['status'] {
+  if (current === 'done') return 'done';
   if (current === 'blocked') return 'doing';
   const idx = STATUS_CYCLE.indexOf(current);
   if (idx < 0) return 'doing';
-  return STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+  // Cap at the last cycle entry rather than wrapping to the first.
+  const next = idx + 1;
+  return STATUS_CYCLE[Math.min(next, STATUS_CYCLE.length - 1)];
 }

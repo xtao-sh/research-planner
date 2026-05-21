@@ -308,8 +308,8 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className="rd-flow-col"
-      style={isOver ? { background: 'var(--rd-surface-2)' } : undefined}
+      className={`rd-flow-col${isOver ? ' is-drop-target' : ''}`}
+      data-status={status}
     >
       <div className="rd-flow-col-head">
         <span

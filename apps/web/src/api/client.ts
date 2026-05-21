@@ -29,11 +29,21 @@ export function resolveApi(path: string) {
 }
 
 async function extractErrorMessage(res: Response): Promise<string> {
-  let message = `请求失败（${res.status}）`;
+  // Locale-neutral default. The server typically supplies a useful
+  // `message` field (or `error` code) that we surface verbatim; this
+  // is just the fallback for empty / malformed responses. Was previously
+  // hardcoded to a Chinese string, which leaked into English UI.
+  let message = `Request failed (${res.status})`;
   try {
     const data = await res.json();
     if (data && typeof data === 'object') {
-      const value = (data as any).message || JSON.stringify(data);
+      // Prefer server-supplied human text; fall back to the machine
+      // error code if that's all we got; final fallback is the JSON
+      // dump (useful for debugging unexpected shapes).
+      const value =
+        (data as { message?: string }).message ||
+        (data as { error?: string }).error ||
+        JSON.stringify(data);
       if (value) message = value;
     }
   } catch {

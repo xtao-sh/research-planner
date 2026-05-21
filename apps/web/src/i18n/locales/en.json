@@ -769,6 +769,7 @@
   "now": {
     "errorToggleFocus": "Couldn't toggle focus pin. Try again.",
     "errorApplyPatch": "Couldn't update task. Try again.",
+    "loadingSummary": "Loading your tasks…",
     "byTimeframeEyebrow": "By timeframe",
     "timeframePast": "{{n}} past window",
     "title": "Top of mind",

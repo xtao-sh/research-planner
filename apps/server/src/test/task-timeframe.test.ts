@@ -161,4 +161,44 @@ describe('task timeframe bucket', () => {
     // future UI show "added 3 weeks ago" if useful.
     expect(typeof r.body.timeframeAnchor).toBe('string');
   });
+
+  // Regression guard: clearing the anchor without also clearing the bucket
+  // would leave the row in an invalid state (bucket set, anchor null) and
+  // break every downstream countdown. The server should re-stamp anchor to
+  // now() rather than honour the clear.
+  it('anchor=null on a kept-bucket update re-stamps to now()', async () => {
+    const c = await post({
+      title: 'orphan-anchor',
+      timeframeBucket: 'week',
+      timeframeAnchor: '2025-01-01T00:00:00.000Z',
+    });
+    expect(c.body.timeframeBucket).toBe('week');
+
+    const before = Date.now();
+    const u = await put(c.body.id, { timeframeAnchor: null });
+    const after = Date.now();
+    expect(u.status).toBe(200);
+    // Bucket preserved.
+    expect(u.body.timeframeBucket).toBe('week');
+    // Anchor re-stamped to roughly now, not cleared.
+    expect(typeof u.body.timeframeAnchor).toBe('string');
+    const ts = new Date(u.body.timeframeAnchor!).getTime();
+    expect(ts).toBeGreaterThanOrEqual(before - 5000);
+    expect(ts).toBeLessThanOrEqual(after + 5000);
+  });
+
+  // The "clear both" path: when bucket=null AND anchor=null are both sent,
+  // both should clear (the user is explicitly tearing the bucket down).
+  it('anchor=null + bucket=null clears both fields', async () => {
+    const c = await post({
+      title: 'tear-down',
+      timeframeBucket: 'month',
+    });
+    expect(c.body.timeframeBucket).toBe('month');
+
+    const u = await put(c.body.id, { timeframeBucket: null, timeframeAnchor: null });
+    expect(u.status).toBe(200);
+    expect(u.body.timeframeBucket).toBeUndefined();
+    expect(u.body.timeframeAnchor).toBeUndefined();
+  });
 });

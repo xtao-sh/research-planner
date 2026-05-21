@@ -286,6 +286,7 @@ function ProjectCard({
       {hasAnyBucket && (
         <div
           className="rd-proj-buckets"
+          role="group"
           aria-label={t('timeframe.label')}
           style={{
             display: 'flex',

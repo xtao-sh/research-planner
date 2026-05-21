@@ -312,6 +312,42 @@ export function ProjectDetailPage() {
     }
   }, [selectedTaskId]);
 
+  // Targeted sync — when the selected task's *server-derived* bucket/anchor
+  // fields change (e.g. after the inline editor auto-commits a new bucket
+  // and the server stamps an anchor), pull just those two fields into the
+  // form. We can't depend on the whole `tasks` array (would clobber
+  // in-flight free-text edits like notes), but a narrowly-scoped merge
+  // keeps the drawer's countdown + Reset-button visibility in step with
+  // the server.
+  const selectedTimeframeBucket = useMemo(
+    () => (selectedTaskId
+      ? tasks.find((t) => t.id === selectedTaskId)?.timeframeBucket ?? null
+      : null),
+    [selectedTaskId, tasks]
+  );
+  const selectedTimeframeAnchor = useMemo(
+    () => (selectedTaskId
+      ? tasks.find((t) => t.id === selectedTaskId)?.timeframeAnchor ?? null
+      : null),
+    [selectedTaskId, tasks]
+  );
+  useEffect(() => {
+    if (!selectedTaskId) return;
+    setForm((f) => {
+      if (
+        f.timeframeBucket === selectedTimeframeBucket &&
+        f.timeframeAnchor === selectedTimeframeAnchor
+      ) {
+        return f;
+      }
+      return {
+        ...f,
+        timeframeBucket: selectedTimeframeBucket,
+        timeframeAnchor: selectedTimeframeAnchor,
+      };
+    });
+  }, [selectedTaskId, selectedTimeframeBucket, selectedTimeframeAnchor]);
+
   async function handleDurationModeChange(mode: DurationMode) {
     setDurationMode(mode);
     await refreshProject(mode);

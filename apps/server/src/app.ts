@@ -1979,9 +1979,18 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
             body.timeframeBucket === null
               ? null
               : body.timeframeAnchor !== undefined
-                ? body.timeframeAnchor
-                  ? new Date(body.timeframeAnchor)
-                  : null
+                ? // Explicit anchor in payload. null clears it, BUT only if
+                  // the bucket is also being cleared in this same request
+                  // (caller sent bucket=null above). Otherwise we'd leave
+                  // the row in the invalid state (bucket set, anchor null),
+                  // so we re-stamp to now() instead. Empty-window-on-a-set-
+                  // bucket is meaningless and would break countdown math
+                  // downstream.
+                  body.timeframeAnchor
+                    ? new Date(body.timeframeAnchor)
+                    : body.timeframeBucket === null
+                      ? null
+                      : new Date()
                 : body.timeframeBucket !== undefined
                   ? // bucket explicitly set on this update — pick existing
                     // anchor if present, else stamp now()

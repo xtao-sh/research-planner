@@ -325,7 +325,7 @@ export function TaskListPanel({
       {anyBucketed && (
         <div
           className="rd-tf-group"
-          role="toolbar"
+          role="group"
           aria-label={t('timeframe.label')}
           style={{ padding: '6px 14px 2px' }}
         >

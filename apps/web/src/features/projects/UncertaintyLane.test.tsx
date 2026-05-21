@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTimeframeEndMs } from './UncertaintyLane';
+import { computeTimeframeEndMs } from '../tasks/timeframe';
 
 const DAY = 86_400_000;
 

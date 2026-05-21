@@ -638,6 +638,7 @@ function TimeframeCountdownText({
           className="rd-btn rd-btn-ghost rd-btn-sm"
           onClick={onResetAnchor}
           title={t('timeframe.resetHint')}
+          aria-label={t('timeframe.resetHint')}
         >
           {t('timeframe.reset')}
         </button>

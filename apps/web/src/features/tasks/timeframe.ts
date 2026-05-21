@@ -7,6 +7,26 @@
 import type { Task, TimeframeBucket } from '@rp/shared';
 import { TIMEFRAME_DAYS } from '@rp/shared';
 
+/**
+ * Compute the calendar millisecond at which a task's fuzzy timeframe
+ * window ends, given its anchor date and bucket. Returns null when the
+ * window has no end (no bucket, or `someday` which is intentionally
+ * open-ended) or when the anchor itself is unusable. Used by the
+ * UncertaintyLane tick marker.
+ */
+export function computeTimeframeEndMs(
+  anchor: string | Date | null | undefined,
+  bucket: TimeframeBucket | null | undefined
+): number | null {
+  if (!anchor || !bucket) return null;
+  const days = TIMEFRAME_DAYS[bucket];
+  if (days == null) return null;
+  const anchorMs =
+    typeof anchor === 'string' ? new Date(anchor).getTime() : anchor.getTime();
+  if (!Number.isFinite(anchorMs)) return null;
+  return anchorMs + days * 86_400_000;
+}
+
 const MS_PER_DAY = 86_400_000;
 
 export interface TimeframeStatus {

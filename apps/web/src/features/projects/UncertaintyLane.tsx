@@ -1,33 +1,12 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Milestone, ScheduleResult, Task, TimeframeBucket } from '@rp/shared';
-import { TIMEFRAME_DAYS } from '@rp/shared';
+import type { Milestone, ScheduleResult, Task } from '@rp/shared';
+import { computeTimeframeEndMs } from '../tasks/timeframe';
 
-/**
- * Compute the calendar millisecond at which a task's fuzzy timeframe
- * window ends, given its anchor date and bucket. Returns null when the
- * window has no end (no bucket, or `someday` which is intentionally
- * open-ended) or when the anchor itself is unusable.
- */
-export function computeTimeframeEndMs(
-  anchorISO: string | null | undefined,
-  bucket: TimeframeBucket | null | undefined,
-): number | null {
-  if (!anchorISO || !bucket) return null;
-  const days = TIMEFRAME_DAYS[bucket];
-  if (days == null) return null;
-  const anchorMs = new Date(anchorISO).getTime();
-  if (!Number.isFinite(anchorMs)) return null;
-  return anchorMs + days * 86_400_000;
-}
-
-/** Short single-letter label per bucket, used above the tick mark. */
-const TIMEFRAME_SHORT_LABEL: Record<Exclude<TimeframeBucket, 'someday'>, string> = {
-  week: 'W',
-  month: 'M',
-  quarter: 'Q',
-  year: 'Y',
-};
+// computeTimeframeEndMs and the short-label lookup both live in shared
+// modules now — `features/tasks/timeframe.ts` and the `timeframe.bucketsShort`
+// i18n namespace respectively — so the lane component no longer duplicates
+// them.
 
 interface UncertaintyLaneProps {
   items: ScheduleResult['items'];
@@ -275,9 +254,12 @@ export function UncertaintyLane({ items, tasks, cpSet, milestones, projectStart,
             tfEndMs >= minStart &&
             tfEndMs <= maxEnd;
           const tfTickX = showTfTick && tfEndMs != null ? xFor(tfEndMs) : 0;
+          // Source the short letter from i18n so en/zh-CN can localise the
+          // label (e.g. zh: 周/月/季/年). Falls through to '' if bucket is
+          // unset or 'someday' (the latter has no end position anyway).
           const tfTickLabel =
             tfBucket && tfBucket !== 'someday'
-              ? TIMEFRAME_SHORT_LABEL[tfBucket]
+              ? (t(`timeframe.bucketsShort.${tfBucket}` as const) as string)
               : '';
           const tfTickTitle =
             showTfTick && tfEndMs != null

@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Task } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
-import { computeTimeframeStatus } from '../tasks/timeframe';
+import { countPastTimeframe } from '../tasks/timeframe';
 
 /**
  * Weekly Retrospective — /review.
@@ -156,14 +156,7 @@ export function ReviewPage() {
     // explicitly not on the clock). This is an informational nudge — the
     // product stance is "silent on past-bucket" elsewhere, but a weekly
     // retrospective is exactly the place to surface accumulated drift.
-    const now = new Date();
-    let pastTimeframe = 0;
-    for (const tk of allTasks) {
-      if (tk.status === 'done') continue;
-      if (!tk.timeframeBucket || tk.timeframeBucket === 'someday') continue;
-      const s = computeTimeframeStatus(tk.timeframeBucket, tk.timeframeAnchor, now);
-      if (s?.isPast) pastTimeframe++;
-    }
+    const pastTimeframe = countPastTimeframe(allTasks);
     if (pastTimeframe > 0) {
       out.push(
         t('review.observationTimeframePast', {

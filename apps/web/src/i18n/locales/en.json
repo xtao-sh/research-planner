@@ -306,6 +306,9 @@
     "totalHours": "Total duration: {{hours}} hours",
     "noSchedule": "No schedule yet — add some tasks."
   },
+  "lane": {
+    "timeframeEnd": "Window ends {{date}}"
+  },
   "view": {
     "visualizations": "Visualizations",
     "lane": "Uncertainty Lane",

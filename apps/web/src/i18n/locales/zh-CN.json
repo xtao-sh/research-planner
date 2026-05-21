@@ -306,6 +306,9 @@
     "totalHours": "总时长：{{hours}} 小时",
     "noSchedule": "暂无排程，请添加任务。"
   },
+  "lane": {
+    "timeframeEnd": "时段在 {{date}} 结束"
+  },
   "view": {
     "visualizations": "可视化视图",
     "lane": "不确定区间",

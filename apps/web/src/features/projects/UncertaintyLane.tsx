@@ -1,6 +1,33 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Milestone, ScheduleResult, Task } from '@rp/shared';
+import type { Milestone, ScheduleResult, Task, TimeframeBucket } from '@rp/shared';
+import { TIMEFRAME_DAYS } from '@rp/shared';
+
+/**
+ * Compute the calendar millisecond at which a task's fuzzy timeframe
+ * window ends, given its anchor date and bucket. Returns null when the
+ * window has no end (no bucket, or `someday` which is intentionally
+ * open-ended) or when the anchor itself is unusable.
+ */
+export function computeTimeframeEndMs(
+  anchorISO: string | null | undefined,
+  bucket: TimeframeBucket | null | undefined,
+): number | null {
+  if (!anchorISO || !bucket) return null;
+  const days = TIMEFRAME_DAYS[bucket];
+  if (days == null) return null;
+  const anchorMs = new Date(anchorISO).getTime();
+  if (!Number.isFinite(anchorMs)) return null;
+  return anchorMs + days * 86_400_000;
+}
+
+/** Short single-letter label per bucket, used above the tick mark. */
+const TIMEFRAME_SHORT_LABEL: Record<Exclude<TimeframeBucket, 'someday'>, string> = {
+  week: 'W',
+  month: 'M',
+  quarter: 'Q',
+  year: 'Y',
+};
 
 interface UncertaintyLaneProps {
   items: ScheduleResult['items'];
@@ -236,6 +263,29 @@ export function UncertaintyLane({ items, tasks, cpSet, milestones, projectStart,
             Math.round((span.mEnd - span.start) / 3_600_000)
           );
 
+          // Timeframe-end tick: where the task's fuzzy "finish-in-about"
+          // window closes. Skips tasks without a bucket, `someday` tasks
+          // (no end), and ticks that fall past the visible range.
+          const tfEndMs = computeTimeframeEndMs(tk.timeframeAnchor, tk.timeframeBucket);
+          const tfBucket = tk.timeframeBucket;
+          const showTfTick =
+            tfEndMs != null &&
+            tfBucket != null &&
+            tfBucket !== 'someday' &&
+            tfEndMs >= minStart &&
+            tfEndMs <= maxEnd;
+          const tfTickX = showTfTick && tfEndMs != null ? xFor(tfEndMs) : 0;
+          const tfTickLabel =
+            tfBucket && tfBucket !== 'someday'
+              ? TIMEFRAME_SHORT_LABEL[tfBucket]
+              : '';
+          const tfTickTitle =
+            showTfTick && tfEndMs != null
+              ? t('lane.timeframeEnd', {
+                  date: new Date(tfEndMs).toLocaleDateString(),
+                })
+              : '';
+
           const overlayItem =
             overlay && overlay.items.find((oi) => oi.taskId === it.taskId);
           let overlayLeft = 0;
@@ -315,6 +365,23 @@ export function UncertaintyLane({ items, tasks, cpSet, milestones, projectStart,
                 >
                   <span className="rd-tick-lbl">P</span>
                 </div>
+                {/* Timeframe-window-end tick — quieter than O/P, colored
+                    per bucket. Skipped entirely for someday / out-of-range. */}
+                {showTfTick && tfBucket && (
+                  <div
+                    className="rd-ubar-tf-tick"
+                    style={{
+                      left: tfTickX - PAD_X,
+                      // Bucket color overrides the row status color here so
+                      // the tick reads as timeframe-specific.
+                      ['--rd-tf-color' as string]: `var(--tf-${tfBucket})`,
+                    }}
+                    title={tfTickTitle}
+                    aria-label={tfTickTitle}
+                  >
+                    <span className="rd-tf-tick-lbl">{tfTickLabel}</span>
+                  </div>
+                )}
               </div>
             </div>
           );

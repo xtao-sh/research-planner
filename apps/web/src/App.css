@@ -6365,6 +6365,31 @@ body {
   background: var(--rd-surface);
   padding: 0 3px;
 }
+/* Timeframe-window-end tick — per-row marker at (anchor + bucket.days).
+   Subordinate to O/P/M bars: thinner, lower opacity, dashed, no z-index
+   bump so the core bar still dominates when squinting at the lane. */
+.rd-ubar-tf-tick {
+  position: absolute;
+  top: 8px;
+  height: 40px;
+  width: 0;
+  border-left: 2px dashed var(--rd-tf-color, var(--rd-row-color));
+  opacity: 0.45;
+  pointer-events: auto;
+}
+.rd-ubar-tf-tick .rd-tf-tick-lbl {
+  position: absolute;
+  top: -10px;
+  left: -5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--rd-tf-color, var(--rd-row-color));
+  background: var(--rd-surface);
+  padding: 0 2px;
+  border-radius: 2px;
+  line-height: 1;
+}
 /* Milestone vertical line on the lane */
 .rd-lane-milestone {
   position: absolute;

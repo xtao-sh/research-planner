@@ -9,11 +9,13 @@ import {
 } from '../../api/notes';
 import { getProjectTypeMeta } from '../projects/projectTypes';
 import { formatRelative } from '../../utils/time';
+import { useToast } from '../../components/Toast';
 
 type RowAction = 'idle' | 'file' | 'promote';
 
 export function InboxPage() {
   const { t } = useTranslation();
+  const toast = useToast();
   const { inbox, refreshInbox, projects, eventTick } = useAppData();
 
   // Re-fetch on real-time event tick.
@@ -24,9 +26,12 @@ export function InboxPage() {
   const [pendingAction, setPendingAction] = useState<Record<string, RowAction>>({});
   const [pickedProject, setPickedProject] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  // Confirm-delete is a two-click flow now (no native confirm() — those
+  // dialogs are awful on macOS and don't match the toast/modal aesthetic
+  // of the rest of the app). Clicking Delete once arms the row; the
+  // button label flips to "Confirm delete" + danger style for ~4 seconds.
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const visibleNotes = tagFilter
     ? inbox.filter((n) => n.tags.includes(tagFilter))
@@ -38,14 +43,16 @@ export function InboxPage() {
 
   async function handleFile(note: Note, projectId: string) {
     setBusyId(note.id);
-    setError(null);
     try {
       await updateNote(note.id, { projectId });
       const proj = projects.find((p) => p.id === projectId);
-      setFeedback(t('inbox.fileSuccess', { project: proj?.name ?? '' }));
+      toast.push(
+        t('inbox.fileSuccess', { project: proj?.name ?? '' }),
+        { kind: 'success' }
+      );
       await refreshInbox();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      toast.push(e instanceof Error ? e.message : String(e), { kind: 'error' });
     } finally {
       setBusyId(null);
       setAction(note.id, 'idle');
@@ -54,29 +61,42 @@ export function InboxPage() {
 
   async function handlePromote(note: Note, projectId: string) {
     setBusyId(note.id);
-    setError(null);
     try {
       await promoteNoteToTask(note.id, projectId);
       const proj = projects.find((p) => p.id === projectId);
-      setFeedback(t('inbox.promoteSuccess', { project: proj?.name ?? '' }));
+      toast.push(
+        t('inbox.promoteSuccess', { project: proj?.name ?? '' }),
+        { kind: 'success' }
+      );
       await refreshInbox();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      toast.push(e instanceof Error ? e.message : String(e), { kind: 'error' });
     } finally {
       setBusyId(null);
       setAction(note.id, 'idle');
     }
   }
 
-  async function handleDelete(note: Note) {
-    if (!confirm(t('inbox.confirmDelete'))) return;
+  // First click: arm. Second click within the 4s window: execute.
+  // Auto-disarms via a timeout so the danger state doesn't linger.
+  function armOrConfirmDelete(note: Note) {
+    if (pendingDelete === note.id) {
+      void executeDelete(note);
+      return;
+    }
+    setPendingDelete(note.id);
+    window.setTimeout(() => {
+      setPendingDelete((cur) => (cur === note.id ? null : cur));
+    }, 4000);
+  }
+  async function executeDelete(note: Note) {
     setBusyId(note.id);
-    setError(null);
+    setPendingDelete(null);
     try {
       await apiDeleteNote(note.id);
       await refreshInbox();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      toast.push(e instanceof Error ? e.message : String(e), { kind: 'error' });
     } finally {
       setBusyId(null);
     }
@@ -155,16 +175,9 @@ export function InboxPage() {
           </div>
         )}
 
-        {error && (
-          <div role="alert" style={{ color: 'var(--danger-color, #b91c1c)' }}>
-            {error}
-          </div>
-        )}
-        {feedback && !error && (
-          <div role="status" style={{ color: 'var(--success-color, #047857)', fontSize: '0.875rem' }}>
-            {feedback}
-          </div>
-        )}
+        {/* Errors + success feedback go through the global toast system
+            now (the inline status div used to flash, drift, and
+            disagree with the rest of the app). */}
 
         <div className="rd-inbox-list">
           {visibleNotes.map((note) => {
@@ -287,11 +300,22 @@ export function InboxPage() {
                       </button>
                       <button
                         type="button"
-                        className="rd-btn rd-btn-ghost rd-btn-sm"
-                        onClick={() => handleDelete(note)}
+                        className={
+                          pendingDelete === note.id
+                            ? 'rd-btn rd-btn-sm rd-btn-danger'
+                            : 'rd-btn rd-btn-ghost rd-btn-sm'
+                        }
+                        onClick={() => armOrConfirmDelete(note)}
                         disabled={busy}
+                        aria-label={
+                          pendingDelete === note.id
+                            ? t('inbox.confirmDeleteCta')
+                            : t('inbox.delete')
+                        }
                       >
-                        {t('inbox.delete')}
+                        {pendingDelete === note.id
+                          ? t('inbox.confirmDeleteCta')
+                          : t('inbox.delete')}
                       </button>
                     </>
                   )}

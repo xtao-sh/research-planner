@@ -840,6 +840,7 @@
     "promoteToTask": "升格为任务…",
     "delete": "删除",
     "confirmDelete": "确定删除这条记录？",
+    "confirmDeleteCta": "再次点击确认",
     "promoteSuccess": "已升格为 {{project}} 的任务",
     "fileSuccess": "已归档到 {{project}}",
     "openCapture": "+ 速记",

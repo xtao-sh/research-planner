@@ -5947,6 +5947,15 @@ body {
   border-color: var(--rd-ink);
 }
 .rd-btn-primary:hover { background: oklch(0.28 0.01 85); }
+/* Danger variant — used for armed destructive actions (e.g. the
+   two-click delete flow in /inbox). Hue tracks --rd-st-blocked so
+   it reads consistently with other "this will break things" cues. */
+.rd-btn-danger {
+  background: var(--rd-st-blocked);
+  color: oklch(0.99 0 0);
+  border-color: var(--rd-st-blocked);
+}
+.rd-btn-danger:hover { filter: brightness(0.92); }
 .rd-btn-ghost {
   border-color: transparent;
   color: var(--rd-ink-2);

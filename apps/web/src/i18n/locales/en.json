@@ -844,6 +844,7 @@
     "promoteToTask": "Promote to task…",
     "delete": "Delete",
     "confirmDelete": "Delete this capture?",
+    "confirmDeleteCta": "Confirm delete",
     "promoteSuccess": "Promoted to a task in {{project}}",
     "fileSuccess": "Filed to {{project}}",
     "openCapture": "+ Capture",

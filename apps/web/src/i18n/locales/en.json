@@ -830,7 +830,8 @@
       "overCapacity": "Doing intensity {{used}} > {{budget}} — drop one before adding more.",
       "openThreads": "Open threads",
       "openThreadsOne": "1 unfiled note",
-      "openThreadsMany": "{{n}} unfiled notes"
+      "openThreadsMany": "{{n}} unfiled notes",
+      "openThreadsCta": "Open inbox to triage"
     }
   },
   "inbox": {

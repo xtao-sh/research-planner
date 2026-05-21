@@ -6010,6 +6010,21 @@ body {
   font-weight: 500;
   color: var(--rd-ink);
 }
+/* Some briefing cells are buttons (e.g. open-threads → /inbox). Style
+   them so they don't look like form buttons while still reading as
+   tappable — subtle border accent + cursor on hover. */
+button.rd-briefing-cell {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: border-color 80ms, transform 80ms;
+}
+button.rd-briefing-cell:hover {
+  border-color: var(--accent);
+}
+button.rd-briefing-cell:active {
+  transform: translateY(1px);
+}
 .rd-briefing-actions {
   display: flex;
   gap: 8px;

@@ -698,6 +698,7 @@ function NowBriefingCard({
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const meta = getProjectTypeMeta(project.type);
   const budget = useIntensityBudget();
 
@@ -985,10 +986,15 @@ function NowBriefingCard({
             </div>
           )}
           {openThreadsText && (
-            <div className="rd-briefing-cell">
+            <button
+              type="button"
+              className="rd-briefing-cell rd-briefing-cell--action"
+              onClick={() => navigate('/inbox')}
+              title={t('now.briefing.openThreadsCta')}
+            >
               <div className="rd-lbl">{t('now.briefing.openThreads')}</div>
               <div className="rd-val">{openThreadsText}</div>
-            </div>
+            </button>
           )}
           {openThoughtText && (
             <div className="rd-briefing-cell">
@@ -1006,13 +1012,10 @@ function NowBriefingCard({
         >
           {t('briefing.backToWork')}
         </button>
-        <button
-          type="button"
-          className="rd-btn rd-btn-sm"
-          onClick={() => { /* no-op resolver for now */ }}
-        >
-          {t('briefing.looseEnd')}
-        </button>
+        {/* Removed the no-op "Loose end" CTA — its intent was unclear and
+            the actual loose-end signal is the "Loose end" / "Stuck" cell
+            in the grid above. The user can click into the project (Back
+            to work) and the task list will surface stuck tasks. */}
         <button
           type="button"
           className="rd-btn rd-btn-ghost rd-btn-sm"

@@ -826,7 +826,8 @@
       "overCapacity": "进行中强度 {{used}} > {{budget}}——先卸下一项再添加。",
       "openThreads": "未理顺",
       "openThreadsOne": "1 条未归档笔记",
-      "openThreadsMany": "{{n}} 条未归档笔记"
+      "openThreadsMany": "{{n}} 条未归档笔记",
+      "openThreadsCta": "打开收件箱进行归档"
     }
   },
   "inbox": {

@@ -17,6 +17,36 @@ export type TaskStatus = 'todo' | 'doing' | 'blocked' | 'review' | 'done';
 
 export type TaskSize = 'xs' | 's' | 'm' | 'l' | 'xl';
 
+/**
+ * A fuzzy "I'd like to finish this in roughly X" bucket. Distinct from
+ * `dueSoft` / `dueHard` which are specific calendar dates — `timeframeBucket`
+ * communicates magnitude without committing to a day. Anchored at task
+ * creation; the user can manually re-anchor when re-committing to a task.
+ *
+ * `someday` is the explicit no-deadline option — surfaces lower than
+ * dated buckets and never reads as "overdue."
+ */
+export type TimeframeBucket = 'week' | 'month' | 'quarter' | 'year' | 'someday';
+
+/** Iteration-order ordered list for UI pickers. someday sits at the end. */
+export const TIMEFRAME_BUCKETS: readonly TimeframeBucket[] = [
+  'week',
+  'month',
+  'quarter',
+  'year',
+  'someday',
+] as const;
+
+/** Calendar-day length per bucket. `someday` is intentionally null —
+ *  countdown / past-window cues should treat null as "not on the clock." */
+export const TIMEFRAME_DAYS: Record<TimeframeBucket, number | null> = {
+  week: 7,
+  month: 30,
+  quarter: 90,
+  year: 365,
+  someday: null,
+};
+
 export interface Estimate {
   o: number; // optimistic hours
   m: number; // most likely hours
@@ -70,6 +100,14 @@ export interface Task {
   blockedAt?: string; // ISO date-time — when task entered 'blocked' status
   dueSoft?: string; // ISO date-time
   dueHard?: string; // ISO date-time
+  /** Fuzzy "finish-in-about" bucket. See TimeframeBucket above. Optional;
+   *  most tasks won't have one. Setting this is orthogonal to dueSoft /
+   *  dueHard — a task can have both a hard date and a timeframe bucket. */
+  timeframeBucket?: TimeframeBucket;
+  /** When the bucket started counting. Defaults to createdAt on the server
+   *  when timeframeBucket is set without an explicit anchor. The user can
+   *  re-anchor (e.g. "bump back into this week") by sending a fresh value. */
+  timeframeAnchor?: string; // ISO date-time
   milestoneId?: ID;
   /** Parent task — when present, this task is rendered indented under the
    *  parent in the project task list. Single-parent tree, max depth 3.

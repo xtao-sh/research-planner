@@ -119,6 +119,8 @@ CREATE TABLE "Task" (
     "blockedAt" TIMESTAMP(3),
     "dueSoft" TIMESTAMP(3),
     "dueHard" TIMESTAMP(3),
+    "timeframeBucket" TEXT,
+    "timeframeAnchor" TIMESTAMP(3),
     "milestoneId" TEXT,
     "parentTaskId" TEXT,
     "notes" TEXT,

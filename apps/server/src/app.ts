@@ -108,6 +108,13 @@ function toTask(row: TaskRow, hasChildren?: boolean): Task {
     blockedAt: isoOrUndef(row.blockedAt),
     dueSoft: isoOrUndef(row.dueSoft),
     dueHard: isoOrUndef(row.dueHard),
+    timeframeBucket:
+      ((row as TaskRow & { timeframeBucket?: string | null }).timeframeBucket as
+        Task['timeframeBucket']
+        | undefined) ?? undefined,
+    timeframeAnchor: isoOrUndef(
+      (row as TaskRow & { timeframeAnchor?: Date | null }).timeframeAnchor ?? null
+    ),
     milestoneId: row.milestoneId ?? undefined,
     parentTaskId: (row as TaskRow & { parentTaskId?: string | null })
       .parentTaskId ?? undefined,
@@ -213,6 +220,8 @@ const taskStatusSchema = z.enum(['todo', 'doing', 'blocked', 'review', 'done']);
 
 const taskSizeSchema = z.enum(['xs', 's', 'm', 'l', 'xl']);
 
+const timeframeBucketSchema = z.enum(['week', 'month', 'quarter', 'year', 'someday']);
+
 const estimateSchema = z.object({
   o: z.number().finite().min(0).optional(),
   m: z.number().finite().min(0).optional(),
@@ -248,6 +257,11 @@ const taskCreateSchema = z.object({
   assignee: z.string().max(100).optional(),
   dueSoft: isoDateTime.optional(),
   dueHard: isoDateTime.optional(),
+  /** Fuzzy 'finish-in-about' bucket. Setting this without timeframeAnchor
+   *  is fine — the server fills the anchor with `now()` on first set. Pass
+   *  null to explicitly clear the bucket; the anchor is cleared alongside. */
+  timeframeBucket: timeframeBucketSchema.nullable().optional(),
+  timeframeAnchor: isoDateTime.nullable().optional(),
   milestoneId: z.string().optional(),
   /** Optional parent task — if present, this task becomes a subtask of it.
    *  Server validates: same project, no cycle, depth ≤ MAX_PARENT_DEPTH. */
@@ -1734,6 +1748,14 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         assignee: body.assignee ?? null,
         dueSoft: body.dueSoft ? new Date(body.dueSoft) : null,
         dueHard: body.dueHard ? new Date(body.dueHard) : null,
+        // Timeframe bucket — when set without an explicit anchor, the server
+        // anchors to now() so countdown math has a starting point.
+        timeframeBucket: body.timeframeBucket ?? null,
+        timeframeAnchor: body.timeframeBucket
+          ? body.timeframeAnchor
+            ? new Date(body.timeframeAnchor)
+            : new Date()
+          : null,
         milestoneId: body.milestoneId ?? null,
         parentTaskId: body.parentTaskId ?? null,
         notes: body.notes ?? null,
@@ -1940,6 +1962,33 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
           blockedAt: finalBlockedAt,
           dueSoft: body.dueSoft ? new Date(body.dueSoft) : original.dueSoft,
           dueHard: body.dueHard ? new Date(body.dueHard) : original.dueHard,
+          // Timeframe update semantics:
+          //   - bucket omitted: leave both fields alone
+          //   - bucket === null: clear both fields (drop the bucket)
+          //   - bucket changed to a new value: keep existing anchor unless caller
+          //     supplied a fresh one OR there was no anchor yet (then default to now)
+          //   - bucket unchanged, anchor supplied: re-anchor only
+          timeframeBucket:
+            body.timeframeBucket === null
+              ? null
+              : body.timeframeBucket !== undefined
+                ? body.timeframeBucket
+                : (original as typeof original & { timeframeBucket?: string | null })
+                    .timeframeBucket ?? null,
+          timeframeAnchor:
+            body.timeframeBucket === null
+              ? null
+              : body.timeframeAnchor !== undefined
+                ? body.timeframeAnchor
+                  ? new Date(body.timeframeAnchor)
+                  : null
+                : body.timeframeBucket !== undefined
+                  ? // bucket explicitly set on this update — pick existing
+                    // anchor if present, else stamp now()
+                    (original as typeof original & { timeframeAnchor?: Date | null })
+                      .timeframeAnchor ?? new Date()
+                  : (original as typeof original & { timeframeAnchor?: Date | null })
+                      .timeframeAnchor ?? null,
           milestoneId:
             body.milestoneId !== undefined ? body.milestoneId : original.milestoneId,
           parentTaskId: nextParentTaskId,
@@ -1961,7 +2010,8 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
       [
         'title', 'type', 'status', 'estimateO', 'estimateM', 'estimateP',
         'size', 'intensity', 'confidence', 'priority', 'labels', 'assignee', 'startPlanned',
-        'endPlanned', 'dueSoft', 'dueHard', 'milestoneId', 'parentTaskId', 'notes',
+        'endPlanned', 'dueSoft', 'dueHard', 'timeframeBucket', 'timeframeAnchor',
+        'milestoneId', 'parentTaskId', 'notes',
       ] as const
     );
     await emitEvent(prisma, {

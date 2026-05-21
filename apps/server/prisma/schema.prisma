@@ -157,6 +157,12 @@ model Task {
   blockedAt     DateTime?
   dueSoft       DateTime?
   dueHard       DateTime?
+  // Fuzzy 'finish-in-about' bucket. One of 'week'/'month'/'quarter'/'year'/'someday'.
+  // Stored as plain String (SQLite has no enums); validated in zod at the API edge.
+  timeframeBucket String?
+  // When the bucket started counting. Server defaults to createdAt when
+  // timeframeBucket is set but anchor isn't supplied.
+  timeframeAnchor DateTime?
   milestoneId   String?
   parentTaskId  String?
   notes         String?

@@ -132,6 +132,71 @@ export function endOfCurrentWorkingWindow(
 }
 
 /**
+ * Backward mirror of `nextWorkingInstant`: return the LATEST instant <= `ms`
+ * that falls inside an open working window (inclusive of the window's end
+ * boundary, so a task may end exactly at window close). Walks backward at
+ * most MAX_FORWARD_DAYS days; returns `ms` unchanged if no open window is
+ * found within the horizon. Used by `retreatWorkingTime` to back-solve the
+ * start of a task constrained by its END (FF/SF dependencies).
+ */
+export function prevWorkingInstant(ms: number, calendar: CalendarDescriptor): number {
+  let cur = ms;
+  for (let i = 0; i < MAX_FORWARD_DAYS; i++) {
+    const dayStart = startOfUtcDay(cur);
+    const dateStr = formatUtcDate(cur);
+    if (calendar.holidays.has(dateStr)) {
+      cur = dayStart - 1; // last ms of the previous UTC day
+      continue;
+    }
+    const dow = utcDayOfWeek(cur);
+    const window = calendar.weeklyHours[dow];
+    if (!window) {
+      cur = dayStart - 1;
+      continue;
+    }
+    const windowStartMs = dayStart + window.startHour * MS_PER_HOUR;
+    const windowEndMs = dayStart + window.endHour * MS_PER_HOUR;
+    if (cur >= windowEndMs) return windowEndMs;
+    if (cur >= windowStartMs) return cur;
+    // cur is before today's window opens — go to the previous day.
+    cur = dayStart - 1;
+  }
+  // eslint-disable-next-line no-console
+  console.warn('[scheduler] prevWorkingInstant: no working window found within horizon');
+  return ms;
+}
+
+/**
+ * Mirror of `endOfCurrentWorkingWindow`: given an instant inside (or at the
+ * end boundary of) an open window, return that window's START instant. The
+ * midnight guard handles the rare case of a window whose endHour is 24
+ * (close == next UTC midnight): such an instant is attributed back to the
+ * previous day's window.
+ */
+export function startOfCurrentWorkingWindow(
+  ms: number,
+  calendar: CalendarDescriptor
+): number {
+  const dayStart = startOfUtcDay(ms);
+  if (ms === dayStart) {
+    const prevDayStart = dayStart - MS_PER_DAY;
+    const prevDow = utcDayOfWeek(prevDayStart);
+    const prevWin = calendar.weeklyHours[prevDow];
+    if (
+      prevWin &&
+      prevWin.endHour === 24 &&
+      !calendar.holidays.has(formatUtcDate(prevDayStart))
+    ) {
+      return prevDayStart + prevWin.startHour * MS_PER_HOUR;
+    }
+  }
+  const dow = utcDayOfWeek(ms);
+  const window = calendar.weeklyHours[dow];
+  if (!window) return ms; // shouldn't happen for a valid working instant
+  return dayStart + window.startHour * MS_PER_HOUR;
+}
+
+/**
  * Advance `startMs` by `hours` of *working time*. When `calendar` is undefined
  * this falls back to continuous wall-clock time (current behavior), i.e.
  * `startMs + hours * 3_600_000`.
@@ -163,4 +228,43 @@ export function advanceWorkingTime(
   // eslint-disable-next-line no-console
   console.warn('[scheduler] advanceWorkingTime: exceeded safety horizon, falling back to continuous time');
   return startMs + hours * MS_PER_HOUR;
+}
+
+/**
+ * Backward mirror of `advanceWorkingTime`: return the start instant such that
+ * advancing it by `hours` of working time lands exactly on `endMs`. In other
+ * words, retreat `hours` of working time from `endMs`. When `calendar` is
+ * undefined this is plain `endMs - hours * 3_600_000`.
+ *
+ * Used for FF/SF dependencies, which constrain the successor's END rather than
+ * its start. The previous implementation subtracted wall-clock duration to
+ * convert an end-constraint into a start-constraint, which is wrong under a
+ * calendar (the wall-clock span of a task includes closed windows). This
+ * walks backward through working windows so the resulting start, when advanced
+ * by `hours` of working time, reproduces `endMs`.
+ */
+export function retreatWorkingTime(
+  endMs: number,
+  hours: number,
+  calendar?: CalendarDescriptor
+): number {
+  if (!calendar) return endMs - hours * MS_PER_HOUR;
+  if (hours <= 0) return prevWorkingInstant(endMs, calendar);
+
+  let cur = prevWorkingInstant(endMs, calendar);
+  let remainingMs = hours * MS_PER_HOUR;
+
+  for (let i = 0; i < MAX_FORWARD_DAYS; i++) {
+    const windowStartMs = startOfCurrentWorkingWindow(cur, calendar);
+    const available = cur - windowStartMs;
+    if (available >= remainingMs) {
+      return cur - remainingMs;
+    }
+    remainingMs -= available;
+    // Jump to the latest working instant strictly before this window opens.
+    cur = prevWorkingInstant(windowStartMs - 1, calendar);
+  }
+  // eslint-disable-next-line no-console
+  console.warn('[scheduler] retreatWorkingTime: exceeded safety horizon, falling back to continuous time');
+  return endMs - hours * MS_PER_HOUR;
 }

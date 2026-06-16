@@ -3,6 +3,7 @@ import type { Dependency, Task } from '../../shared/src/types';
 import { schedule } from './schedule';
 import {
   advanceWorkingTime,
+  retreatWorkingTime,
   nextWorkingInstant,
   parseHhMmWindow,
   type CalendarDescriptor,
@@ -149,5 +150,70 @@ describe('schedule() with calendar option', () => {
     expect(by.get('b')!.endPlanned).toBe(
       new Date(Date.UTC(2026, 0, 5, 12, 0, 0)).toISOString()
     );
+  });
+});
+
+describe('retreatWorkingTime — backward mirror of advanceWorkingTime', () => {
+  it('no calendar: endMs - hours*3.6M', () => {
+    const end = Date.UTC(2026, 0, 5, 13, 0, 0);
+    expect(retreatWorkingTime(end, 4, undefined)).toBe(end - 4 * 3_600_000);
+  });
+
+  it('inverts advanceWorkingTime within one window (Mon 13:00 - 4h = Mon 09:00)', () => {
+    const cal = weekdayCalendar();
+    const mon13 = Date.UTC(2026, 0, 5, 13, 0, 0);
+    expect(retreatWorkingTime(mon13, 4, cal)).toBe(Date.UTC(2026, 0, 5, 9, 0, 0));
+  });
+
+  it('inverts a weekend span: Mon 11:00 - 4h = Fri 16:00', () => {
+    const cal = weekdayCalendar();
+    // advanceWorkingTime(Fri 16:00, 4h) === Mon 11:00 (existing test). Invert it.
+    const mon11 = Date.UTC(2026, 0, 5, 11, 0, 0);
+    expect(retreatWorkingTime(mon11, 4, cal)).toBe(Date.UTC(2026, 0, 2, 16, 0, 0));
+  });
+
+  it('round-trips advance∘retreat for an arbitrary working duration', () => {
+    const cal = weekdayCalendar();
+    const start = nextWorkingInstant(Date.UTC(2026, 0, 5, 14, 0, 0), cal); // Mon 14:00
+    const end = advanceWorkingTime(start, 7, cal); // spans into Tue
+    expect(retreatWorkingTime(end, 7, cal)).toBe(start);
+  });
+});
+
+describe('schedule() calendar fixes (Round-17 audit)', () => {
+  it('preserves the critical path across a weekend (binding not cleared on slide)', () => {
+    // a: Fri 16:00 -> Fri 18:00 (2h). b: FS on a, slides to Mon 09:00 -> 11:00.
+    // The critical path must include BOTH a and b — previously the calendar
+    // slide cleared b's predecessor binding, truncating the trace to just [b].
+    const cal = weekdayCalendar();
+    const tasks = [
+      mkTask('a', { o: 2, m: 2, p: 2 }),
+      mkTask('b', { o: 2, m: 2, p: 2 }),
+    ];
+    const deps = [mkDep('d', 'a', 'b', 'FS', 0)];
+    const start = new Date(Date.UTC(2026, 0, 2, 16, 0, 0)); // Fri 16:00
+    const res = schedule(tasks, deps, { projectId: 'p', projectStart: start, calendar: cal });
+    expect(res.criticalPath).toEqual(['a', 'b']);
+  });
+
+  it('FF dependency makes the successor END exactly with the predecessor under a calendar', () => {
+    // a: 10h from Mon 09:00 -> Tue 10:00 (9h Mon + 1h Tue).
+    // b: FF lag=0, 2h. Constraint is b.end >= a.end, intent "finish together".
+    // Correct: b.start Mon 17:00, b.end Tue 10:00 (== a.end).
+    // The OLD wall-clock subtraction put b at Tue 09:00 -> Tue 11:00 (1h late).
+    const cal = weekdayCalendar();
+    const tasks = [
+      mkTask('a', { o: 10, m: 10, p: 10 }),
+      mkTask('b', { o: 2, m: 2, p: 2 }),
+    ];
+    const deps = [mkDep('d', 'a', 'b', 'FF', 0)];
+    const start = new Date(Date.UTC(2026, 0, 5, 9, 0, 0)); // Mon 09:00
+    const res = schedule(tasks, deps, { projectId: 'p', projectStart: start, calendar: cal });
+    const by = new Map(res.items.map((i) => [i.taskId, i]));
+    expect(by.get('a')!.endPlanned).toBe(new Date(Date.UTC(2026, 0, 6, 10, 0, 0)).toISOString());
+    expect(by.get('b')!.startPlanned).toBe(new Date(Date.UTC(2026, 0, 5, 17, 0, 0)).toISOString());
+    expect(by.get('b')!.endPlanned).toBe(new Date(Date.UTC(2026, 0, 6, 10, 0, 0)).toISOString());
+    // The FF constraint (b.end >= a.end) holds, and the dates finish together.
+    expect(by.get('b')!.endPlanned).toBe(by.get('a')!.endPlanned);
   });
 });

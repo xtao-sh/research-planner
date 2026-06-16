@@ -9,6 +9,7 @@ import { topoSort } from './topo';
 import {
   advanceWorkingTime,
   nextWorkingInstant,
+  retreatWorkingTime,
   type CalendarDescriptor,
 } from './calendar';
 
@@ -92,7 +93,6 @@ export function computeSchedule(
       const pEnd = endTimes.get(d.fromTaskId);
       if (!pStart || !pEnd) continue; // topo order guarantees this, but be defensive
       const lagMs = d.lag * 3_600_000;
-      const durMs = durH * 3_600_000;
       let candidateMs: number;
       switch (d.type) {
         case 'FS':
@@ -104,14 +104,15 @@ export function computeSchedule(
           candidateMs = pStart.getTime() + lagMs;
           break;
         case 'FF':
-          // successor.end >= pred.end + lag
-          // => successor.start >= pred.end + lag - duration
-          candidateMs = pEnd.getTime() + lagMs - durMs;
+          // successor.end >= pred.end + lag. We back-solve the start by
+          // retreating `durH` of WORKING time from the target end — not by
+          // subtracting wall-clock duration, which would violate the
+          // constraint whenever the calendar inserts closed windows.
+          candidateMs = retreatWorkingTime(pEnd.getTime() + lagMs, durH, opts.calendar);
           break;
         case 'SF':
-          // successor.end >= pred.start + lag
-          // => successor.start >= pred.start + lag - duration
-          candidateMs = pStart.getTime() + lagMs - durMs;
+          // successor.end >= pred.start + lag — same working-time back-solve.
+          candidateMs = retreatWorkingTime(pStart.getTime() + lagMs, durH, opts.calendar);
           break;
         default: {
           // Should be unreachable given the DepType union, but default to FS.
@@ -130,14 +131,13 @@ export function computeSchedule(
     }
 
     // Slide start forward into the next open working window if the calendar
-    // is present. If this moves the start, clear `binding` to match the
-    // projectStart-clamp semantics.
+    // is present. This is a working-time ADJUSTMENT, not a new constraint —
+    // the predecessor that bound this task's logical start still bound it,
+    // so `binding` is preserved. (Previously this cleared `binding`, which
+    // severed the critical-path trace across every weekend/holiday — a
+    // multi-day FS chain would report a truncated critical path.)
     if (opts.calendar) {
-      const slid = nextWorkingInstant(bestMs, opts.calendar);
-      if (slid !== bestMs) {
-        bestMs = slid;
-        binding = null;
-      }
+      bestMs = nextWorkingInstant(bestMs, opts.calendar);
     }
 
     const startAt = new Date(bestMs);
@@ -167,15 +167,39 @@ export function computeSchedule(
  */
 export function criticalPathFromComputation(comp: ScheduleComputation): ID[] {
   if (comp.order.length === 0) return [];
+
+  // Length of the predecessor-binding chain ending at `id` (the depth of the
+  // critical chain that produced it). Used to break end-time ties.
+  const chainLength = (id: ID): number => {
+    let n = 0;
+    const seen = new Set<ID>();
+    let cur: ID | null = id;
+    while (cur && !seen.has(cur)) {
+      seen.add(cur);
+      n++;
+      cur = comp.predecessorBinding.get(cur) ?? null;
+    }
+    return n;
+  };
+
   let endId: ID | null = null;
   let bestEnd = -Infinity;
-  // Tie-break: later in topo order wins (deeper task).
+  let bestLen = -1;
+  // Pick the latest end time. Among equal end times, prefer the task whose
+  // binding chain is longest (the genuinely critical one), then the smallest
+  // id — fully deterministic regardless of input row order.
   for (const id of comp.order) {
-    const e = comp.endTimes.get(id)!;
-    const ms = e.getTime();
-    if (ms >= bestEnd) {
+    const ms = comp.endTimes.get(id)!.getTime();
+    if (ms > bestEnd) {
       bestEnd = ms;
       endId = id;
+      bestLen = chainLength(id);
+    } else if (ms === bestEnd) {
+      const len = chainLength(id);
+      if (len > bestLen || (len === bestLen && endId !== null && id < endId)) {
+        endId = id;
+        bestLen = len;
+      }
     }
   }
   if (!endId) return [];

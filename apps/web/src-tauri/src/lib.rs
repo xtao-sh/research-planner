@@ -1,6 +1,14 @@
+use std::sync::Mutex;
 use tauri::Manager;
-use tauri_plugin_shell::process::CommandEvent;
+use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
+
+/// Holds the spawned Fastify/Prisma sidecar so we can terminate it when the
+/// app exits. Without this the child handle was dropped immediately after
+/// spawn — and dropping a `CommandChild` does NOT kill the process, so a
+/// zombie server kept holding port 4317. The next launch then failed to
+/// bind and the webview loaded a blank page. Every launch leaked a process.
+struct SidecarProcess(Mutex<Option<CommandChild>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -17,12 +25,37 @@ pub fn run() {
             let db_path = app_data_dir.join("data.db");
 
             if !db_path.exists() {
-                if let Ok(seed_db) = app
+                match app
                     .path()
                     .resolve("data/data.db", tauri::path::BaseDirectory::Resource)
                 {
-                    if seed_db.exists() {
-                        std::fs::copy(&seed_db, &db_path)?;
+                    Ok(seed_db) if seed_db.exists() => {
+                        // Propagate copy errors instead of swallowing them — a
+                        // failed copy leaves an empty/absent DB and the server
+                        // then fails every query with no diagnostic.
+                        if let Err(e) = std::fs::copy(&seed_db, &db_path) {
+                            eprintln!(
+                                "[setup] FATAL: failed to copy seed DB {} -> {}: {}",
+                                seed_db.display(),
+                                db_path.display(),
+                                e
+                            );
+                            return Err(Box::new(e));
+                        }
+                    }
+                    Ok(seed_db) => {
+                        eprintln!(
+                            "[setup] WARNING: bundled seed DB not found at {} — starting with no database. \
+                             The server will fail until a database exists.",
+                            seed_db.display()
+                        );
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "[setup] WARNING: could not resolve bundled seed DB resource: {}. \
+                             Starting with no database.",
+                            e
+                        );
                     }
                 }
             }
@@ -46,7 +79,10 @@ pub fn run() {
                 .env("HOST", "127.0.0.1")
                 .env("CORS_ORIGIN", cors_origin);
 
-            let (mut rx, _child) = sidecar.spawn()?;
+            let (mut rx, child) = sidecar.spawn()?;
+            // Keep the child handle alive in app state so we can kill it on
+            // exit (see the RunEvent::ExitRequested handler below).
+            app.manage(SidecarProcess(Mutex::new(Some(child))));
             tauri::async_runtime::spawn(async move {
                 while let Some(event) = rx.recv().await {
                     match event {
@@ -66,6 +102,21 @@ pub fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // Terminate the sidecar when the app is quitting so it doesn't
+            // outlive the window and hold the port for the next launch.
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                if let Some(state) = app_handle.try_state::<SidecarProcess>() {
+                    if let Ok(mut guard) = state.0.lock() {
+                        if let Some(child) = guard.take() {
+                            if let Err(e) = child.kill() {
+                                eprintln!("[shutdown] failed to kill sidecar: {}", e);
+                            }
+                        }
+                    }
+                }
+            }
+        });
 }

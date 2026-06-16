@@ -6867,6 +6867,21 @@ button.rd-briefing-cell:active {
   --rd-st-review-tint:  oklch(0.26 0.06 290);
   --rd-st-done-tint:    oklch(0.26 0.06 145);
 
+  /* Legacy status badge tokens (--st-*-bg/-fg) were hardcoded light hex in
+     :root and never switched in dark mode — every .badge-status, tint, and
+     --bg-*-light alias rendered a light pastel panel on the dark page.
+     Dark-mode values: deep tinted bg (matches --rd-st-*-tint) + lifted fg. */
+  --st-todo-bg:    oklch(0.26 0.01 85);
+  --st-todo-fg:    oklch(0.80 0.01 85);
+  --st-doing-bg:   oklch(0.26 0.06 200);
+  --st-doing-fg:   oklch(0.82 0.10 200);
+  --st-blocked-bg: oklch(0.26 0.06 25);
+  --st-blocked-fg: oklch(0.82 0.12 25);
+  --st-review-bg:  oklch(0.26 0.06 290);
+  --st-review-fg:  oklch(0.82 0.10 290);
+  --st-done-bg:    oklch(0.26 0.06 145);
+  --st-done-fg:    oklch(0.82 0.10 145);
+
   /* Timeframe bucket palette — dark theme (lifted L, deeper tints). */
   --tf-week:    oklch(0.72 0.18 28);
   --tf-month:   oklch(0.78 0.14 55);

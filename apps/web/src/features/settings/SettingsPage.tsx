@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Task } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
+import { CalendarPanel } from '../calendar/CalendarPanel';
+import { canWrite as canWriteRole } from '../workspaces/permissions';
 import {
   STATUS_KEYS,
   type WipLimits,
@@ -102,8 +104,19 @@ function TabButton({
 
 function WorkspaceTab() {
   const { t } = useTranslation();
+  const { activeWorkspaceId, workspaces } = useAppData();
   const [budget, setBudgetLocal] = useState<number>(() => getIntensityBudget());
   const [savedFlash, setSavedFlash] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  // The working calendar is per-workspace and drives every schedule. Its
+  // editor (CalendarPanel) existed but was never mounted anywhere — so
+  // users couldn't set the calendar the scheduler depends on. Surface it
+  // here.
+  const activeRole = workspaces.workspaces.find(
+    (w) => w.id === activeWorkspaceId
+  )?.role;
+  const canEditCalendar = canWriteRole(activeRole);
 
   function handleSave() {
     setIntensityBudget(budget);
@@ -165,6 +178,36 @@ function WorkspaceTab() {
           </span>
         )}
       </div>
+
+      <div style={{ maxWidth: 480, marginTop: 8 }}>
+        <label
+          style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}
+        >
+          {t('settings.workingCalendar')}
+        </label>
+        <p
+          className="muted"
+          style={{ fontSize: 12, marginTop: 0, marginBottom: 8, color: 'var(--rd-ink-3)' }}
+        >
+          {t('settings.workingCalendarHint')}
+        </p>
+        <button
+          type="button"
+          className="rd-btn rd-btn-sm"
+          onClick={() => setShowCalendar(true)}
+          disabled={!activeWorkspaceId}
+        >
+          {t('settings.editWorkingCalendar')}
+        </button>
+      </div>
+
+      {showCalendar && activeWorkspaceId && (
+        <CalendarPanel
+          workspaceId={activeWorkspaceId}
+          canEdit={canEditCalendar}
+          onClose={() => setShowCalendar(false)}
+        />
+      )}
     </section>
   );
 }

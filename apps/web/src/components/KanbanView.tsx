@@ -113,7 +113,18 @@ export function KanbanView({
     // 8px activation distance: under that it's a click (onTaskClick still
     // fires); above, the drag begins. Same constraint TaskListPanel uses.
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    // Space (not Enter) picks up / drops a card for keyboard reordering.
+    // Freeing Enter lets it OPEN the focused card's details — previously
+    // dnd-kit claimed both Enter and Space, so there was no keyboard path
+    // to open a task from the board at all (a11y P1).
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+      keyboardCodes: {
+        start: ['Space'],
+        cancel: ['Escape'],
+        end: ['Space'],
+      },
+    })
   );
 
   const dndDisabled = !onStatusChange && !onReorder;
@@ -378,6 +389,12 @@ const SortableFlowCard = React.memo(
     cursor: dndDisabled ? undefined : 'grab',
   };
 
+  // Compose dnd-kit's keydown (Space pickup) with an Enter-to-open handler.
+  // The explicit onKeyDown below would otherwise shadow the one inside
+  // `listeners`, so we call it through.
+  const dndKeyDown = (listeners as { onKeyDown?: React.KeyboardEventHandler })
+    ?.onKeyDown;
+
   return (
     <div
       ref={setNodeRef}
@@ -385,8 +402,17 @@ const SortableFlowCard = React.memo(
       className={`rd-flow-card ${isFocused ? 'focused' : ''}`}
       onClick={onClick}
       title={typeLabel}
+      aria-label={`${task.title} — ${typeLabel}`}
       {...attributes}
       {...listeners}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onClick();
+          return;
+        }
+        dndKeyDown?.(e);
+      }}
     >
       <span className="rd-drag-handle" aria-hidden="true">⋮⋮</span>
       <div className="rd-title">{task.title}</div>

@@ -164,6 +164,28 @@ async function checkParentChain(
   return { ok: true };
 }
 
+/**
+ * Validate that `milestoneId` (when non-null) names a milestone that exists
+ * and belongs to `projectId`. Without this, a bad id triggers an uncaught
+ * Prisma P2003 FK violation (500), and a milestone id from another project
+ * silently attaches a foreign milestone to the task (data corruption).
+ * Returns 'ok' | 'missing' | 'cross-project'.
+ */
+async function checkMilestone(
+  prismaClient: PrismaClient | Prisma.TransactionClient,
+  milestoneId: string | null | undefined,
+  projectId: string
+): Promise<'ok' | 'missing' | 'cross-project'> {
+  if (!milestoneId) return 'ok';
+  const m = await prismaClient.milestone.findUnique({
+    where: { id: milestoneId },
+    select: { projectId: true },
+  });
+  if (!m) return 'missing';
+  if (m.projectId !== projectId) return 'cross-project';
+  return 'ok';
+}
+
 function toDependency(row: DependencyRow): Dependency {
   return {
     id: row.id,
@@ -1736,6 +1758,15 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
       }
     }
 
+    // Validate milestone before insert — a bad/foreign id would otherwise
+    // throw P2003 (500) or silently cross-link.
+    const msCheck = await checkMilestone(prisma, body.milestoneId, projectId);
+    if (msCheck !== 'ok') {
+      return rep
+        .code(400)
+        .send({ error: 'invalidMilestone', message: `Invalid milestoneId (${msCheck})` });
+    }
+
     const existingCount = await prisma.task.count({ where: { projectId } });
     const e = body.estimate ?? {};
     const o = Math.max(1, Math.round(e.o ?? 1));
@@ -1857,6 +1888,31 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
     const nextConfidence = body.estimate
       ? body.estimate.confidence ?? original.confidence
       : original.confidence;
+
+    // Validate the MERGED estimate, not just the incoming object. A partial
+    // update like { estimate: { o: 10 } } against an original m=2,p=2 passes
+    // the zod refine (which only sees the incoming {o:10}) yet produces an
+    // invalid stored estimate o=10 > m=2. The Round-17 zod refine couldn't
+    // catch this because the violation only exists after the merge.
+    if (
+      body.estimate &&
+      !(nextEstimateO <= nextEstimateM && nextEstimateM <= nextEstimateP)
+    ) {
+      return rep
+        .code(400)
+        .send({ error: 'estimateOrder', message: 'Estimate must satisfy O ≤ M ≤ P' });
+    }
+
+    // Validate a newly-assigned milestone against the task's project (same
+    // reason as create: avoid P2003 500s + cross-project links).
+    if (body.milestoneId !== undefined && body.milestoneId !== null) {
+      const msCheck = await checkMilestone(prisma, body.milestoneId, original.projectId);
+      if (msCheck !== 'ok') {
+        return rep
+          .code(400)
+          .send({ error: 'invalidMilestone', message: `Invalid milestoneId (${msCheck})` });
+      }
+    }
 
     // Phase F: auto-stamp startedAt/finishedAt on status transitions.
     // Explicit values in `body` (including null) override the auto-set values.
@@ -2770,16 +2826,24 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
       prisma.note.findMany({
         where: {
           workspaceId: { in: workspaceIds },
-          ...(isTagMode
-            ? { tags: { contains: tagNeedle } }
-            : {
-                OR: [
-                  { body: { contains: q } },
-                  // tags is JSON-encoded; substring match against the raw
-                  // column catches mid-tag hits in mixed-mode queries.
-                  { tags: { contains: q } },
-                ],
-              }),
+          // Combine visibility AND match via AND[] — two top-level `OR`
+          // keys would collide. Visibility: project notes are workspace-
+          // shared; inbox notes (projectId=null) are private to the
+          // creator. Previously search matched all workspace notes,
+          // leaking other members' private inbox captures by substring/tag.
+          AND: [
+            { OR: [{ projectId: { not: null } }, { createdById: userId }] },
+            isTagMode
+              ? { tags: { contains: tagNeedle } }
+              : {
+                  OR: [
+                    { body: { contains: q } },
+                    // tags is JSON-encoded; substring match against the raw
+                    // column catches mid-tag hits in mixed-mode queries.
+                    { tags: { contains: q } },
+                  ],
+                },
+          ],
         },
         take: 50,
         select: {
@@ -2840,33 +2904,60 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
     });
     const workspaceIds = memberships.map((m) => m.workspaceId);
 
-    const [user, workspaces, projects, tasks, dependencies, milestones, notes, scenarios, events] =
-      await Promise.all([
-        prisma.user.findUnique({
-          where: { id: userId },
-          select: { id: true, email: true, name: true, createdAt: true },
-        }),
-        prisma.workspace.findMany({ where: { id: { in: workspaceIds } } }),
-        prisma.project.findMany({ where: { workspaceId: { in: workspaceIds } } }),
-        prisma.task.findMany({
-          where: { project: { workspaceId: { in: workspaceIds } } },
-        }),
-        prisma.dependency.findMany({
-          where: { project: { workspaceId: { in: workspaceIds } } },
-        }),
-        prisma.milestone.findMany({
-          where: { project: { workspaceId: { in: workspaceIds } } },
-        }),
-        prisma.note.findMany({ where: { workspaceId: { in: workspaceIds } } }),
-        prisma.scenario.findMany({
-          where: { project: { workspaceId: { in: workspaceIds } } },
-        }),
-        prisma.event.findMany({ where: { workspaceId: { in: workspaceIds } } }),
-      ]);
+    const [
+      user,
+      workspaces,
+      projects,
+      tasks,
+      dependencies,
+      milestones,
+      notes,
+      scenarios,
+      events,
+      workingCalendars,
+      holidays,
+    ] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, name: true, createdAt: true },
+      }),
+      prisma.workspace.findMany({ where: { id: { in: workspaceIds } } }),
+      prisma.project.findMany({ where: { workspaceId: { in: workspaceIds } } }),
+      prisma.task.findMany({
+        where: { project: { workspaceId: { in: workspaceIds } } },
+      }),
+      prisma.dependency.findMany({
+        where: { project: { workspaceId: { in: workspaceIds } } },
+      }),
+      prisma.milestone.findMany({
+        where: { project: { workspaceId: { in: workspaceIds } } },
+      }),
+      // Notes: project notes are workspace-shared, but INBOX notes
+      // (projectId=null) are private to their creator. Without this OR the
+      // backup leaked every other member's private captures into any
+      // member's download. Mirrors the /api/workspaces/:id/inbox guard.
+      prisma.note.findMany({
+        where: {
+          workspaceId: { in: workspaceIds },
+          OR: [{ projectId: { not: null } }, { createdById: userId }],
+        },
+      }),
+      prisma.scenario.findMany({
+        where: { project: { workspaceId: { in: workspaceIds } } },
+      }),
+      prisma.event.findMany({ where: { workspaceId: { in: workspaceIds } } }),
+      // Working calendar + holidays drive every schedule; omitting them
+      // meant a restore silently reverted to the default 9-18 weekday
+      // calendar, changing every project's dates.
+      prisma.workingCalendar.findMany({ where: { workspaceId: { in: workspaceIds } } }),
+      prisma.holiday.findMany({
+        where: { calendar: { workspaceId: { in: workspaceIds } } },
+      }),
+    ]);
 
     const dump = {
       generatedAt: new Date().toISOString(),
-      schemaVersion: 1,
+      schemaVersion: 2,
       users: user ? [user] : [],
       workspaces,
       memberships,
@@ -2877,6 +2968,8 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
       notes,
       scenarios,
       events,
+      workingCalendars,
+      holidays,
     };
 
     const filename = `rp-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;

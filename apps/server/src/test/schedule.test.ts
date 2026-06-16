@@ -17,9 +17,13 @@ describe('schedule endpoint', () => {
     // The seed workspace calendar is Mon-Fri 9-18. That scrambles wall-clock
     // math in these tests (a 9h task starting Fri 14:00 ends Mon 14:00 = 72h
     // wall clock, while a 16h task starting Mon 09:00 ends Tue 16:00 = 31h).
-    // Override to a 24/7 calendar so wall-clock hours ≡ working hours and the
-    // duration-mode assertions remain meaningful.
-    const always = JSON.stringify(new Array(7).fill('00:00-23:59'));
+    // Override to a true 24/7 calendar so wall-clock hours ≡ working hours
+    // and the duration-mode assertions remain meaningful. Must be
+    // "00:00-24:00" (not "00:00-23:59") — the latter leaves a 1-minute
+    // closed window each midnight, so a task whose duration crosses
+    // midnight (depends on the wall-clock projectStart) picks up an extra
+    // minute and the exact-hour assertions flake.
+    const always = JSON.stringify(new Array(7).fill('00:00-24:00'));
     const put = await ctx.app.inject({
       method: 'PUT',
       url: '/api/workspaces/ws-demo/calendar',

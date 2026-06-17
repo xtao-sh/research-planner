@@ -459,18 +459,7 @@ const SortableFlowCard = React.memo(
             />
           </span>
         )}
-      </div>
-      {task.status === 'doing' && (
-        <div className="rd-progress" aria-hidden="true">
-          <div
-            className="rd-fill"
-            style={{
-              width: `${30 + (task.id.length * 7) % 50}%`,
-            }}
-          />
-        </div>
-      )}
-    </div>
+      </div>    </div>
   );
   },
   (a, b) =>

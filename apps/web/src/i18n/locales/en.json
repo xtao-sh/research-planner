@@ -34,7 +34,6 @@
   },
   "app": {
     "title": "Research Planner",
-    "subtitle": "Intelligent research project planning and task scheduling",
     "tagline": "progress over deadlines",
     "toggleTheme": "Toggle theme"
   },
@@ -98,7 +97,12 @@
     "filterPlaceholder": "Search by content or tag…",
     "addButton": "+ Add note",
     "emptyTitle": "No notes yet for this project",
-    "emptyHint": "Use quick capture to add your first note"
+    "emptyHint": "Use quick capture to add your first note",
+    "eyebrowCount": "{{count}} notes",
+    "tagsInProject": "Tags in this project",
+    "tagsAutoExtractedBefore": "Tags are auto-extracted from",
+    "tagsAutoExtractedAfter": "in note bodies.",
+    "promoteToTask": "Promote to task"
   },
   "artifactsTab": {
     "title": "Project artifacts"
@@ -722,8 +726,7 @@
     "groupProjects": "Projects",
     "resultCount": "{{n}} matches",
     "resultsCount": "{{count}} results",
-    "openedFromTag": "Searching #{{tag}}",
-    "comingSoon": "Global search is coming soon."
+    "openedFromTag": "Searching #{{tag}}"
   },
   "week": {
     "panel": "📅 This week",
@@ -783,7 +786,7 @@
     "greetAfternoon": "Good afternoon.",
     "greetEvening": "Good evening.",
     "greetNight": "Working late.",
-    "summary": "{{doing}} doing · {{blocked}} blocked · {{focused}} pinned for today · capacity is the new currency.",
+    "summary": "{{doing}} in motion · {{blocked}} waiting · {{focused}} pinned for today.",
     "capacityTitle": "Today's capacity",
     "intensityCommitted": "intensity-points committed",
     "overBy": "over by {{n}}",
@@ -810,9 +813,7 @@
     "deadlineRadarSub": "Soft and hard dates that suddenly matter.",
     "deadlineOverdue": "overdue {{n}}d",
     "deadlineToday": "today",
-    "deadlineInDays": "+{{n}}d",
-    "customize": "Customize",
-    "last14Days": "Last 14 days · Intensity",
+    "deadlineInDays": "+{{n}}d",    "last14Days": "Last 14 days · Intensity",
     "last14DaysCaption": "Energy distribution from your last two weeks.",
     "quickCapture": "Quick capture",
     "quickCapturePrompt": "Caught mid-thought? Drop it now.",
@@ -848,7 +849,6 @@
     "emptyTitle": "Inbox is empty",
     "emptySubtitle": "Press ⌘⇧N (or click + Capture) to drop an idea here.",
     "quickCapture": "Quick capture",
-    "quickCaptureTooltip": "Coming in Phase C",
     "count": "{{count}} items in your inbox",
     "fileToProject": "File to…",
     "promoteToTask": "Promote to task…",
@@ -958,8 +958,8 @@
     "searchFor": "Search for \"{{query}}\""
   },
   "tree": {
-    "eyebrow": "Trial-branch tree",
-    "subline": "A research task often spawns parallel attempts. Each branch shows its own status, so you can see where the project is actually stuck.",
+    "eyebrow": "Subtask breakdown",
+    "subline": "A big task broken into smaller ones. Each subtask shows its own status, so you can see where the work is actually stuck.",
     "legendActive": "active",
     "legendBlocked": "parked / blocked",
     "legendDone": "done",

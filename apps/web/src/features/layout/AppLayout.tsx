@@ -120,6 +120,15 @@ export function AppLayout() {
         return;
       }
 
+      // ⌘⇧N / Ctrl+Shift+N — quick-capture. The flagship capture moment, so
+      // (like ⌘K) it fires from any focus context, including while typing in
+      // an input/textarea — handled BEFORE the isEditableTarget guard below.
+      if (cmd && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        setShowCapture(true);
+        return;
+      }
+
       // '?' (no modifier) opens the shortcuts modal when not in an input.
       if (
         e.key === '?' &&
@@ -132,11 +141,6 @@ export function AppLayout() {
         setShowShortcutsHelp(true);
         return;
       }
-      if (!cmd || !e.shiftKey) return;
-      if (e.key.toLowerCase() !== 'n') return;
-      if (isEditableTarget(e.target)) return;
-      e.preventDefault();
-      setShowCapture(true);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

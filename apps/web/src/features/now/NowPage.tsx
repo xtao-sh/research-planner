@@ -271,13 +271,6 @@ export function NowPage() {
         <h1>{t('nav.now')}</h1>
         <span className="rd-meta">{dateLine}</span>
         <span className="rd-spacer" />
-        <button
-          type="button"
-          className="rd-btn rd-btn-sm"
-          onClick={() => { /* no-op for now */ }}
-        >
-          {t('now.customize')}
-        </button>
       </div>
       <div className="rd-page">
         {/* Greeting band — friendly, time-aware. The accented date sits
@@ -1159,14 +1152,24 @@ function NowTaskRow({
               />
             </>
           )}
-          <span className="rd-sep">·</span>
-          <span className="mono" style={{ fontSize: 11 }}>
-            {t('now.loadEstimateRange', {
-              o: task.estimate.o,
-              p: task.estimate.p,
-              m: task.estimate.m,
-            })}
-          </span>
+          {/* O/M/P estimate range is a deadline/advanced-mode concept
+              (PRD §8.2 — PERT). Progress-mode projects deliberately hide
+              hour ranges, so only render it (and its leading separator)
+              for deadline-mode projects. `project` is the full Project in
+              this row's scope, so project.mode is the in-scope signal — no
+              data threading needed. */}
+          {project.mode === 'deadline' && (
+            <>
+              <span className="rd-sep">·</span>
+              <span className="mono" style={{ fontSize: 11 }}>
+                {t('now.loadEstimateRange', {
+                  o: task.estimate.o,
+                  p: task.estimate.p,
+                  m: task.estimate.m,
+                })}
+              </span>
+            </>
+          )}
           {/* StaleBadge covers both doing-stale AND blocked-stale states.
               Replaces the previous doing-only rightmost text — now NowTaskRow
               matches the other surfaces (Kanban, TaskListPanel, SearchPage). */}

@@ -1007,6 +1007,32 @@ export function ProjectDetailPage() {
                   Object.keys(wipLimits).length > 0 ? wipLimits : undefined
                 }
               />
+              {canWriteActiveWorkspace && (
+                creatingNew ? (
+                  <div className="rd-flow-board-new-task">
+                    <TaskInlineEditor
+                      form={form}
+                      setForm={setForm}
+                      selectedTask={null}
+                      saving={saving}
+                      canWriteActiveWorkspace={canWriteActiveWorkspace}
+                      onSave={handleSaveTask}
+                      onDelete={handleDeleteTask}
+                      onCancel={handleCancelInlineEdit}
+                      onOpenDrawer={() => setShowDetailsDrawer(true)}
+                      onApplyPatch={applyTaskPatch}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-ghost rd-flow-board-add"
+                    onClick={handleNewTask}
+                  >
+                    + {t('task.newTask')}
+                  </button>
+                )
+              )}
             </section>
           )}
 

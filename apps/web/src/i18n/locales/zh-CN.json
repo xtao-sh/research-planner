@@ -34,7 +34,6 @@
   },
   "app": {
     "title": "Research Planner",
-    "subtitle": "智能研究项目规划与任务调度系统",
     "tagline": "进度优先，截止次之",
     "toggleTheme": "切换主题"
   },
@@ -91,17 +90,22 @@
   "projectTabs": {
     "tasks": "任务",
     "notes": "笔记",
-    "artifacts": "工件",
+    "artifacts": "产出",
     "timeline": "时间线"
   },
   "notesTab": {
     "filterPlaceholder": "按内容或标签搜索…",
     "addButton": "+ 添加笔记",
     "emptyTitle": "项目还没有笔记",
-    "emptyHint": "用速记添加你的第一条笔记"
+    "emptyHint": "用速记添加你的第一条笔记",
+    "eyebrowCount": "{{count}} 条笔记",
+    "tagsInProject": "本项目的标签",
+    "tagsAutoExtractedBefore": "标签自动取自笔记正文里的",
+    "tagsAutoExtractedAfter": "。",
+    "promoteToTask": "转为任务"
   },
   "artifactsTab": {
-    "title": "项目工件"
+    "title": "项目产出"
   },
   "dashboard": {
     "emptyTitle": "计划器已准备就绪",
@@ -137,7 +141,7 @@
       "month": "本月",
       "quarter": "本季度",
       "year": "今年",
-      "someday": "改日"
+      "someday": "将来"
     },
     "bucketsShort": {
       "week": "周",
@@ -258,7 +262,7 @@
       "todo": "待办",
       "doing": "进行中",
       "blocked": "受阻",
-      "review": "审查",
+      "review": "审阅",
       "done": "完成"
     },
     "typeLabels": {
@@ -329,7 +333,7 @@
   },
   "panel": {
     "search": "🔍 搜索",
-    "artifactManager": "🗂️ 工件管理",
+    "artifactManager": "🗂️ 产出管理",
     "exportReport": "📤 导出报告"
   },
   "language": {
@@ -486,11 +490,11 @@
     "viewer": "查看者"
   },
   "artifact": {
-    "panel": "🗂️ 工件管理",
-    "addArtifact": "+ 添加工件",
-    "typeLabel": "工件类型",
+    "panel": "🗂️ 产出管理",
+    "addArtifact": "+ 添加产出",
+    "typeLabel": "产出类型",
     "nameLabel": "名称 *",
-    "namePlaceholder": "工件名称",
+    "namePlaceholder": "产出名称",
     "descriptionLabel": "描述",
     "descriptionPlaceholder": "简要描述",
     "urlLinkRequired": "URL *",
@@ -504,17 +508,17 @@
     "contentPlaceholderNote": "输入笔记内容...",
     "tagsLabel": "标签",
     "tagsPlaceholder": "标签1, 标签2, ...",
-    "submit": "添加工件",
-    "searchPlaceholder": "🔍 搜索工件...",
+    "submit": "添加产出",
+    "searchPlaceholder": "🔍 搜索产出...",
     "filterAll": "全部 ({{count}})",
     "filterLink": "🔗 链接 ({{count}})",
     "filterFile": "📎 文件 ({{count}})",
     "filterCode": "💻 代码 ({{count}})",
     "filterData": "📊 数据 ({{count}})",
     "filterNote": "📝 笔记 ({{count}})",
-    "empty": "暂无工件，点击上方按钮添加第一个工件",
-    "noMatches": "没有找到匹配的工件",
-    "deleteTitle": "删除工件",
+    "empty": "暂无产出，点击上方按钮添加第一个产出",
+    "noMatches": "没有找到匹配的产出",
+    "deleteTitle": "删除产出",
     "typeFile": "文件",
     "typeLink": "链接",
     "typeCode": "代码",
@@ -525,7 +529,7 @@
     "optionCode": "💻 代码",
     "optionData": "📊 数据",
     "optionNote": "📝 笔记",
-    "nameRequiredAlert": "请输入工件名称",
+    "nameRequiredAlert": "请输入产出名称",
     "urlRequiredAlert": "请输入链接URL",
     "contentRequiredAlert": "请输入内容"
   },
@@ -579,7 +583,7 @@
     "statusTodo": "待办",
     "statusDoing": "进行中",
     "statusBlocked": "阻塞",
-    "statusReview": "复盘中",
+    "statusReview": "审阅",
     "statusDone": "已完成",
     "typeThinking": "思考",
     "typeReading": "阅读",
@@ -595,7 +599,7 @@
     "todo": "待办",
     "doing": "进行中",
     "blocked": "阻塞",
-    "review": "复盘中",
+    "review": "审阅",
     "done": "已完成",
     "empty": "暂无任务",
     "typeThinking": "💭 思考",
@@ -703,7 +707,7 @@
     "scopeAll": "全部 ({{count}})",
     "scopeTasks": "📋 任务 ({{count}})",
     "scopeJournal": "📝 日志 ({{count}})",
-    "scopeArtifacts": "🗂️ 工件 ({{count}})",
+    "scopeArtifacts": "🗂️ 产出 ({{count}})",
     "tagFilter": "🏷️ 标签筛选",
     "tagFilterCount": "🏷️ 标签筛选 ({{count}})",
     "noMatches": "无匹配结果",
@@ -718,8 +722,7 @@
     "groupProjects": "项目",
     "resultCount": "{{n}} 条匹配",
     "resultsCount": "找到 {{count}} 个结果",
-    "openedFromTag": "搜索 #{{tag}}",
-    "comingSoon": "全局搜索即将上线。"
+    "openedFromTag": "搜索 #{{tag}}"
   },
   "week": {
     "panel": "📅 本周计划",
@@ -779,7 +782,7 @@
     "greetAfternoon": "下午好。",
     "greetEvening": "晚上好。",
     "greetNight": "深夜了。",
-    "summary": "进行中 {{doing}} · 受阻 {{blocked}} · 聚焦 {{focused}} · 今日预算是新的货币。",
+    "summary": "进行中 {{doing}} · 等待中 {{blocked}} · 今日置顶 {{focused}}。",
     "capacityTitle": "今日容量",
     "intensityCommitted": "已投入的强度点",
     "overBy": "超出 {{n}}",
@@ -806,9 +809,7 @@
     "deadlineRadarSub": "突然要紧的软硬截止。",
     "deadlineOverdue": "逾期 {{n}} 天",
     "deadlineToday": "今天",
-    "deadlineInDays": "+{{n}} 天",
-    "customize": "自定义",
-    "last14Days": "近 14 天 · 强度",
+    "deadlineInDays": "+{{n}} 天",    "last14Days": "近 14 天 · 强度",
     "last14DaysCaption": "过去两周的精力分布。",
     "quickCapture": "速记",
     "quickCapturePrompt": "灵光一现？立刻记下。",
@@ -844,14 +845,13 @@
     "emptyTitle": "收件箱空",
     "emptySubtitle": "按 ⌘⇧N（或点击 + 速记）记下一个想法到这里。",
     "quickCapture": "速记",
-    "quickCaptureTooltip": "Phase C 即将接入",
     "count": "收件箱共 {{count}} 条",
     "fileToProject": "归档到…",
-    "promoteToTask": "升格为任务…",
+    "promoteToTask": "转为任务…",
     "delete": "删除",
     "confirmDelete": "确定删除这条记录？",
     "confirmDeleteCta": "再次点击确认",
-    "promoteSuccess": "已升格为 {{project}} 的任务",
+    "promoteSuccess": "已转为 {{project}} 的任务",
     "fileSuccess": "已归档到 {{project}}",
     "openCapture": "+ 速记",
     "captureAnywhereCTA": "随时速记",
@@ -954,12 +954,12 @@
     "searchFor": "搜索 “{{query}}”"
   },
   "tree": {
-    "eyebrow": "试验分支树",
-    "subline": "一个研究任务常会派生多个并行尝试。每个分支显示自己的状态，让你看清项目究竟在哪里卡住了。",
+    "eyebrow": "子任务拆解",
+    "subline": "把一个大任务拆成更小的任务。每个子任务显示自己的状态，让你看清工作究竟卡在哪里。",
     "legendActive": "进行中",
     "legendBlocked": "暂停 / 受阻",
     "legendDone": "完成",
-    "legendOther": "待办 / 审查",
+    "legendOther": "待办 / 审阅",
     "indentHint": "↳ 缩进 = 父任务的子任务",
     "openTree": "任务树",
     "stuckDoing": "卡住 {{n}} 天",

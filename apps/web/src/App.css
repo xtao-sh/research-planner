@@ -6198,6 +6198,13 @@ button.rd-briefing-cell:active {
   text-align: right;
   max-width: 540px;
 }
+.rd-flow-board-add {
+  margin-top: 8px;
+  font-size: 13px;
+}
+.rd-flow-board-new-task {
+  margin-top: 8px;
+}
 .rd-flow-card {
   background: var(--rd-surface);
   border: 1px solid var(--rd-line);
@@ -6244,19 +6251,7 @@ button.rd-briefing-cell:active {
   font-variant-numeric: tabular-nums;
   font-size: 10.5px;
   color: var(--rd-ink-3);
-}
-.rd-flow-card .rd-progress {
-  height: 3px;
-  background: var(--rd-bg-sunk);
-  border-radius: 2px;
-  margin-top: 8px;
-  overflow: hidden;
-}
-.rd-flow-card .rd-progress .rd-fill {
-  height: 100%;
-  background: var(--rd-st-doing);
-}
-.rd-flow-card .rd-drag-handle {
+}.rd-flow-card .rd-drag-handle {
   position: absolute;
   top: 8px;
   right: 10px;

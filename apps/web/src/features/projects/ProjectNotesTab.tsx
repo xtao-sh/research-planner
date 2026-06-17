@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Note } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
-import { deleteNote, getProjectNotes } from '../../api/notes';
+import { deleteNote, getProjectNotes, promoteNoteToTask } from '../../api/notes';
 import { formatRelative } from '../../utils/time';
+import { useToast } from '../../components/Toast';
 import { SkeletonList } from '../../components/Skeleton';
 
 interface ProjectNotesTabProps {
@@ -57,7 +58,9 @@ export function ProjectNotesTab({
   onOpenCapture,
 }: ProjectNotesTabProps) {
   const { t } = useTranslation();
-  const { auth } = useAppData();
+  const { auth, projects } = useAppData();
+  const toast = useToast();
+  const project = projects.find((p) => p.id === projectId);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +93,21 @@ export function ProjectNotesTab({
     }
   }
 
+  async function handlePromote(noteId: string) {
+    try {
+      // Project is known on this tab — promote straight to a task here,
+      // no picker needed. The note leaves the notes feed once promoted.
+      await promoteNoteToTask(noteId, projectId);
+      toast.push(
+        t('inbox.promoteSuccess', { project: project?.name ?? '' }),
+        { kind: 'success' },
+      );
+      await refresh();
+    } catch (e) {
+      toast.push(e instanceof Error ? e.message : String(e), { kind: 'error' });
+    }
+  }
+
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     if (!q) return notes;
@@ -106,9 +124,9 @@ export function ProjectNotesTab({
   }, [notes]);
 
   // Eyebrow text — section name from existing i18n + simple count.
-  const eyebrow = `${t('project.notesPanel')} · ${notes.length} ${
-    notes.length === 1 ? 'note' : 'notes'
-  }`;
+  const eyebrow = `${t('project.notesPanel')} · ${t('notesTab.eyebrowCount', {
+    count: notes.length,
+  })}`;
 
   return (
     <div className="rd-notes-grid">
@@ -198,14 +216,24 @@ export function ProjectNotesTab({
                     {author && <span>· {author}</span>}
                     <span style={{ flex: 1 }} />
                     {isOwn && (
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(note.id)}
-                        className="rd-btn rd-btn-ghost rd-btn-sm"
-                        title={t('inbox.delete')}
-                      >
-                        ✕
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handlePromote(note.id)}
+                          className="rd-btn rd-btn-ghost rd-btn-sm"
+                          title={t('notesTab.promoteToTask')}
+                        >
+                          ↑ {t('notesTab.promoteToTask')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(note.id)}
+                          className="rd-btn rd-btn-ghost rd-btn-sm"
+                          title={t('inbox.delete')}
+                        >
+                          ✕
+                        </button>
+                      </>
                     )}
                   </div>
                   <div className="rd-body">{renderBodyWithHashtags(note.body)}</div>
@@ -237,7 +265,7 @@ export function ProjectNotesTab({
       {/* Right rail — tags in this project */}
       <aside className="card" style={{ padding: 16, alignSelf: 'start' }}>
         <div className="rd-section-eyebrow" style={{ marginBottom: 10 }}>
-          Tags in this project
+          {t('notesTab.tagsInProject')}
         </div>
         {allTags.length > 0 ? (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -265,7 +293,8 @@ export function ProjectNotesTab({
           className="muted"
           style={{ marginTop: 16, marginBottom: 0, fontSize: 11.5, lineHeight: 1.5 }}
         >
-          Tags are auto-extracted from <code>#hashtags</code> in note bodies.
+          {t('notesTab.tagsAutoExtractedBefore')} <code>#hashtags</code>{' '}
+          {t('notesTab.tagsAutoExtractedAfter')}
         </p>
       </aside>
     </div>

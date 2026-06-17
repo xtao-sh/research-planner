@@ -37,26 +37,27 @@ Researchers, PhD students, designers, independent makers, and anyone running mul
 
 ## Distinctive features
 
-### 🌫️ Uncertainty Lane
-Visualise tasks as **PERT confidence cones** (Optimistic / Most-likely / Pessimistic) instead of single-point bars. The lane shows the *range* you're operating in, and the critical path is highlighted across the cones — not pretending a 3‑week stretch is "exactly Tuesday."
+### 🔍 Top-of-Mind (`/now`)
+The first thing the app shows you — not a chronological backlog, but a reading of *this moment*: what you're **doing**, what's **blocked**, what you **pinned** for today. Includes:
+- **Daily check-in** — a lightweight "since yesterday → pinned for today → blocked" glance, derived from your own task movement. A reflection, not a report card.
+- **Stuck-task detection** — surfaces tasks that have been `doing` >7 days or `blocked` at all.
+- **Project re-entry briefings** — when you open a project after >3 days, a card summarises what you left mid-flight (now matched on the project page itself).
+- **Capacity rail** — live counter of your committed intensity vs. today's budget, plus a *next-7-days* load preview.
+
+### 📥 Quick capture (⌘⇧N from anywhere) → Inbox
+A note in the inbox in one keystroke — even mid-sentence in another field. No project, no fields, no estimate. Inline hashtags (`#literature #q3`) auto-extract on save. Everything lands in a dedicated **Inbox** page; triage later — or never. Optionally attach a capture to a specific task as context.
 
 ### 🧭 Two modes per project
-- **Progress mode** (default) — Flow board (kanban) + notes. Hides Gantt, dependencies, and scheduling until they're actually useful. The view for "I'm exploring."
-- **Deadline mode** — Full Gantt, scenarios, PERT-driven scheduling, critical-path, soft/hard due dates. The view for "this paper must be submitted by the 15th."
+- **Progress mode** (default) — Flow board (kanban) + notes + artifacts. Hides Gantt, dependencies, and scheduling until they're actually useful. The view for "I'm exploring."
+- **Deadline mode** — Uncertainty Lane, Gantt, scenarios, PERT-driven scheduling, critical-path, soft/hard due dates. The view for "this paper must be submitted by the 15th."
 
 Switching is one click per project. Most projects live in progress mode forever.
 
-### ⚡ Capacity as currency
-Estimates are in **intensity points** (1–5 per task), not hours. You set a daily intensity *budget* — your cognitive ceiling, not your seat-hours. The "/now" view tells you when you've over-committed your day, regardless of what hours the wall clock says.
+### 🗂️ Artifacts
+Each project keeps a tab of its **artifacts** — the links, files, code, datasets, and notes it produced or referenced. The PDF, the DOI, the repo, the figure: attached to the project instead of lost in a folder.
 
-### 📥 Quick capture (⌘⇧N from anywhere)
-A note in the inbox in one keystroke. No project, no fields, no estimate. Inline hashtags (`#literature #q3`) auto-extract on save. Triage later — or never.
-
-### 🔍 Top-of-Mind (`/now`)
-The first thing the app shows you: what you're *doing*, what's *blocked*, what you *pinned* for today. Not a chronological backlog — a reading of the moment. Includes:
-- **Stuck-task detection** — surfaces tasks that have been `doing` >7 days or `blocked` at all.
-- **Project re-entry briefings** — when you open a project after >3 days, a card summarises what you left mid-flight.
-- **Capacity rail** — live counter of your committed intensity vs. today's budget.
+### 🌫️ Uncertainty Lane (deadline mode)
+Visualise tasks as **PERT confidence cones** (Optimistic / Most-likely / Pessimistic) instead of single-point bars. The lane shows the *range* you're operating in, and the critical path is highlighted across the cones — not pretending a 3‑week stretch is "exactly Tuesday." A classic single-line Gantt sits behind a second tab for when you want it.
 
 ### 🎲 Scenarios
 Save the current schedule as a named **scenario**, then change something — defer a task, add capacity, drop a dependency — and overlay the new schedule against the saved one as a faint dashed reference. "What if I commit four hours a day instead of eight" becomes a one-click question.
@@ -124,7 +125,7 @@ The script Bun-compiles the API into a single binary sidecar (~60 MB), seeds a S
 | Frontend | React 18 · Vite · TypeScript · @dnd-kit · i18next (EN / 中文) |
 | Backend | Fastify · Prisma · SQLite (default) / Postgres · WebSocket (in-house presence + broadcast) |
 | Desktop | Tauri 2 · Bun-compiled sidecar |
-| Testing | Vitest (19 web + 127 server tests) · Prisma test fixtures |
+| Testing | Vitest (web · server · scheduler suites) · Prisma test fixtures |
 | Type system | Shared `@rp/shared` package for cross-stack types · zod where it earns its keep |
 
 ---
@@ -135,8 +136,8 @@ The project is **alpha but daily-usable**. The author uses it as the primary pla
 
 What works today:
 - ✅ Full task + project + note CRUD with realtime sync
-- ✅ Flow Board, Task List, Gantt, Uncertainty Lane, Calendar Capacity views
-- ✅ Quick Capture · Top-of-Mind · Search (server-side) · Command Palette (⌘K)
+- ✅ Flow Board (progress mode) · Task List, Uncertainty Lane & Gantt (deadline mode) · Artifacts tab
+- ✅ Quick Capture (⌘⇧N) · Inbox · Top-of-Mind · Search (server-side) · Command Palette (⌘K)
 - ✅ Scenarios + PERT scheduling + critical-path
 - ✅ Multi-workspace with role-based access (owner / admin / writer / viewer)
 - ✅ Self-contained `.app` build (macOS); structure ready for Linux/Windows

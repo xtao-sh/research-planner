@@ -57,6 +57,21 @@ cp "$OUT_BIN" "$SIDECAR_DST"
 # chmod +x is a no-op on Windows but harmless.
 chmod +x "$SIDECAR_DST" 2>/dev/null || true
 
+# Regenerate the seed database so the bundle always ships the CURRENT schema
+# + demo seed, not whatever stale dev.db happens to sit in the working tree
+# (dev.db is gitignored). `migrate deploy` applies all migrations forward
+# (non-destructive); then the v2 demo seed runs against the empty DB. Skip
+# with RP_SKIP_SEED_REGEN=1 to reuse an existing dev.db.
+if [ "${RP_SKIP_SEED_REGEN:-0}" != "1" ]; then
+  echo "==> Regenerating seed database ($SEED_DB_SRC) from migrations + seed"
+  rm -f "$SEED_DB_SRC" "$SEED_DB_SRC-journal"
+  # `file:` URLs resolve relative to the schema dir (prisma/), so this targets
+  # prisma/dev.db. .env is gitignored, so set DATABASE_URL explicitly for CI.
+  ( cd "$SERVER_DIR" \
+      && DATABASE_URL="file:./dev.db" npx prisma migrate deploy \
+      && DATABASE_URL="file:./dev.db" npm run db:seed )
+fi
+
 echo "==> Staging seeded SQLite database at $SEED_DB_DST"
 echo "    SEED_DB_SRC=$SEED_DB_SRC"
 echo "    Source exists? $([ -f "$SEED_DB_SRC" ] && echo yes || echo no)"

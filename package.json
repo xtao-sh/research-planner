@@ -1,7 +1,7 @@
 {
   "name": "research-planner-workspace",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A planner for projects where progress matters more than deadlines — built for research and other uncertain-duration work.",
   "license": "MIT",
   "author": "Tao (@xtao-sh)",

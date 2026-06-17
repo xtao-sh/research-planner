@@ -296,7 +296,7 @@ const taskCreateSchema = z.object({
    *  null to explicitly clear the bucket; the anchor is cleared alongside. */
   timeframeBucket: timeframeBucketSchema.nullable().optional(),
   timeframeAnchor: isoDateTime.nullable().optional(),
-  milestoneId: z.string().optional(),
+  milestoneId: z.string().nullable().optional(),
   /** Optional parent task — if present, this task becomes a subtask of it.
    *  Server validates: same project, no cycle, depth ≤ MAX_PARENT_DEPTH. */
   parentTaskId: z.string().nullable().optional(),
@@ -1921,6 +1921,13 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
       body.status === 'doing' && original.status !== 'doing';
     const isMovingToDone =
       body.status === 'done' && original.status !== 'done';
+    // Reopening a done task (done → anything else) must clear the stale
+    // finishedAt — otherwise the task keeps a completion timestamp while
+    // not being done, which skews retros/momentum and reads as finished.
+    const isLeavingDone =
+      original.status === 'done' &&
+      body.status !== undefined &&
+      body.status !== 'done';
     let autoStartedAt: Date | null = original.startedAt;
     let autoFinishedAt: Date | null = original.finishedAt;
     if (isMovingToDoing && !original.startedAt) {
@@ -1929,6 +1936,9 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
     if (isMovingToDone) {
       if (!original.startedAt) autoStartedAt = new Date();
       if (!original.finishedAt) autoFinishedAt = new Date();
+    }
+    if (isLeavingDone) {
+      autoFinishedAt = null;
     }
     const finalStartedAt =
       body.startedAt !== undefined
@@ -2479,17 +2489,33 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
     }
 
     const finalTags = mergeTags(tags, body);
-    const row = await prisma.note.create({
-      data: {
-        id: randomUUID(),
-        workspaceId,
-        projectId: projectId ?? null,
-        createdById: req.user!.id,
-        body,
-        tags: JSON.stringify(finalTags),
-      },
-      include: { createdBy: { select: { email: true } } },
-    });
+    const row = await prisma.note
+      .create({
+        data: {
+          id: randomUUID(),
+          workspaceId,
+          projectId: projectId ?? null,
+          createdById: req.user!.id,
+          body,
+          tags: JSON.stringify(finalTags),
+        },
+        include: { createdBy: { select: { email: true } } },
+      })
+      .catch((err: unknown) => {
+        // Race: the target project (or workspace) was deleted between the
+        // checks above and this insert → Prisma P2003 FK violation. Return
+        // 400 instead of a raw 500.
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === 'P2003'
+        ) {
+          return null;
+        }
+        throw err;
+      });
+    if (!row) {
+      return rep.code(400).send({ message: 'project not in workspace' });
+    }
 
     // Project notes are visible in activity; inbox captures stay private.
     if (projectId) {

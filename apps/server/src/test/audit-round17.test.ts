@@ -170,4 +170,37 @@ describe('Round-17 audit fixes', () => {
       expect(inboxNotes.length).toBeGreaterThanOrEqual(0);
     });
   });
+
+  describe('lifecycle + milestone P2s', () => {
+    it('reopening a done task clears the stale finishedAt', async () => {
+      const t = await inject('POST', '/api/projects/p1/tasks', sid, {
+        title: 'finish then reopen',
+      });
+      const id = t.body.id;
+      // Move to done → finishedAt stamped.
+      const done = await inject('PUT', `/api/tasks/${id}`, sid, { status: 'done' });
+      expect(done.status).toBe(200);
+      expect(typeof done.body.finishedAt).toBe('string');
+      // Reopen → finishedAt cleared.
+      const reopened = await inject('PUT', `/api/tasks/${id}`, sid, { status: 'doing' });
+      expect(reopened.status).toBe(200);
+      expect(reopened.body.finishedAt ?? null).toBeNull();
+    });
+
+    it('milestoneId: null detaches a milestone', async () => {
+      const ms = await inject('POST', '/api/projects/p1/milestones', sid, {
+        title: 'detach-me',
+      });
+      const t = await inject('POST', '/api/projects/p1/tasks', sid, {
+        title: 'attach then detach',
+        milestoneId: ms.body.id,
+      });
+      expect(t.body.milestoneId).toBe(ms.body.id);
+      const detached = await inject('PUT', `/api/tasks/${t.body.id}`, sid, {
+        milestoneId: null,
+      });
+      expect(detached.status).toBe(200);
+      expect(detached.body.milestoneId ?? null).toBeNull();
+    });
+  });
 });

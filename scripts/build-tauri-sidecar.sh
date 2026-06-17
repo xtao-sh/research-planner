@@ -67,9 +67,13 @@ if [ "${RP_SKIP_SEED_REGEN:-0}" != "1" ]; then
   rm -f "$SEED_DB_SRC" "$SEED_DB_SRC-journal"
   # `file:` URLs resolve relative to the schema dir (prisma/), so this targets
   # prisma/dev.db. .env is gitignored, so set DATABASE_URL explicitly for CI.
+  # migrate deploy is required (the bundle needs a valid schema); the seed is
+  # best-effort — if it hiccups on a CI runner we still ship a schema-only DB,
+  # and the server's first-boot seed() backfills the demo content anyway.
   ( cd "$SERVER_DIR" \
       && DATABASE_URL="file:./dev.db" npx prisma migrate deploy \
-      && DATABASE_URL="file:./dev.db" npm run db:seed )
+      && { DATABASE_URL="file:./dev.db" npm run db:seed \
+             || echo "WARN: db:seed failed — shipping schema-only DB (runtime seed will backfill)" >&2; } )
 fi
 
 echo "==> Staging seeded SQLite database at $SEED_DB_DST"

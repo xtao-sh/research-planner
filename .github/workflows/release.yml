@@ -113,23 +113,9 @@ jobs:
         env:
           DATABASE_URL: file:./prisma/dev.db
 
-      - name: Apply Prisma migrations (creates an empty dev.db)
-        working-directory: apps/server
-        shell: bash
-        run: npx prisma migrate deploy
-        env:
-          DATABASE_URL: file:./prisma/dev.db
-
-      # Seed is best-effort: if it fails (e.g. on a fresh CI runner where
-      # something racey in the seed script trips), we'd rather ship an
-      # empty-but-valid bundled DB than fail the whole release.
-      - name: Seed SQLite database (best-effort)
-        working-directory: apps/server
-        shell: bash
-        continue-on-error: true
-        run: npm run db:seed
-        env:
-          DATABASE_URL: file:./prisma/dev.db
+      # The seed DB is (re)generated inside build-tauri-sidecar.sh below
+      # (migrate deploy + best-effort seed), so it stays identical between
+      # local and CI builds. No separate migrate/seed steps needed here.
 
       - name: Build Bun sidecar (cross-platform)
         shell: bash

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { Dependency, Milestone, Project, Scenario, Task } from '@rp/shared';
+import { mergeTags } from './notes';
 
 const DEMO_EMAIL = 'demo@local';
 const DEMO_PASSWORD = 'demo123';
@@ -333,63 +334,40 @@ async function migrateFromJson(prisma: PrismaClient, parsed: StoreShape, demoWor
 }
 
 async function seedDemo(prisma: PrismaClient, demoWorkspaceId: string) {
-  const projectId = 'p1';
-  const now = new Date();
+  // Runs only on an empty DB (seed() guards on project.count() === 0). Every
+  // date is a deterministic offset from "now" — no randomness — so the /now
+  // re-entry briefing, stale detection and the scheduler tests stay stable.
+  const now = Date.now();
+  const day = 86_400_000;
+  const ago = (days: number): Date => new Date(now - days * day);
+  const agoOrNull = (days: number | null | undefined): Date | null =>
+    days == null ? null : ago(days);
 
-  await prisma.project.upsert({
-    where: { id: projectId },
-    update: { workspaceId: demoWorkspaceId, mode: 'deadline' },
-    create: {
-      id: projectId,
-      name: 'Demo Project',
-      description: 'Seeded demo',
-      type: 'research',
-      mode: 'deadline',
-      createdAt: now,
-      updatedAt: now,
-      startDate: now,
-      workspaceId: demoWorkspaceId,
-    },
-  });
+  const demoUser = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } });
+  const createdById = demoUser?.id ?? null;
 
-  const tasks = [
-    { id: 't1', title: '阅读核心文献', type: 'reading',  o: 2, m: 4, p: 8,  size: 's', priority: 1 },
-    { id: 't2', title: '数据预处理',   type: 'analysis', o: 2, m: 6, p: 10, size: 'm', priority: 2 },
-    { id: 't3', title: '建模与验证',   type: 'analysis', o: 4, m: 8, p: 16, size: 'l', priority: 3 },
+  // Three progress-mode projects spanning research / daily / admin. Staggered
+  // updatedAt values give the "what changed since you were away" briefing
+  // something real to surface.
+  const projects: Array<[string, string, string, string, number, number]> = [
+    ['p1', '多任务切换研究', 'research', '探究任务切换对认知负荷的影响。按进展推进，不押 deadline。', 40, 8],
+    ['p2', '每周文献跟读', 'daily', '维持每周的文献输入与组会节奏。', 25, 2],
+    ['p3', '行政与报销', 'admin', '设备申购、报销、伦理审查等杂事。', 30, 4],
   ];
-  for (const t of tasks) {
-    await prisma.task.upsert({
-      where: { id: t.id },
+  for (const [id, name, type, description, startedDaysAgo, updatedDaysAgo] of projects) {
+    await prisma.project.upsert({
+      where: { id },
       update: {},
       create: {
-        id: t.id,
-        projectId,
-        title: t.title,
-        type: t.type,
-        status: 'todo',
-        estimateO: t.o,
-        estimateM: t.m,
-        estimateP: t.p,
-        size: t.size,
-        priority: t.priority,
-      },
-    });
-  }
-
-  const deps = [
-    { id: 'd1', fromTaskId: 't1', toTaskId: 't2' },
-    { id: 'd2', fromTaskId: 't2', toTaskId: 't3' },
-  ];
-  for (const d of deps) {
-    await prisma.dependency.upsert({
-      where: { id: d.id },
-      update: {},
-      create: {
-        id: d.id,
-        projectId,
-        fromTaskId: d.fromTaskId,
-        toTaskId: d.toTaskId,
-        type: 'FS',
+        id,
+        name,
+        description,
+        type,
+        mode: 'progress',
+        startDate: ago(startedDaysAgo),
+        createdAt: ago(startedDaysAgo),
+        updatedAt: ago(updatedDaysAgo),
+        workspaceId: demoWorkspaceId,
       },
     });
   }
@@ -399,11 +377,109 @@ async function seedDemo(prisma: PrismaClient, demoWorkspaceId: string) {
     update: {},
     create: {
       id: 'm1',
-      projectId,
-      title: '第一阶段验收',
-      dueSoft: new Date(Date.now() + 14 * 24 * 3600 * 1000),
+      projectId: 'p1',
+      title: '预实验与范式定稿',
+      criteria: '范式跑通、数据可用',
+      dueSoft: ago(-21),
     },
   });
+
+  // Tasks. p1 deliberately stays a clean t1 -> t2 -> t3 finish-to-start chain
+  // (t3 keeps O/M/P = 4/8/16) so the scheduler/PERT contract is stable; the
+  // *status mix* is what showcases progress mode. t2 is a stale (8d) pinned
+  // "doing" task and t6 a stale (4d) "blocked" task, so /now lights up.
+  interface TaskRow {
+    id: string; pid: string; title: string; type: string; status: string;
+    o: number; m: number; p: number; size: string; priority: number;
+    started?: number; finished?: number; blocked?: number; focused?: number;
+    bucket?: string | null; anchor?: number | null; labels?: string | null;
+    notes?: string | null; updated: number;
+  }
+  const tasks: TaskRow[] = [
+    { id: 't1', pid: 'p1', title: '梳理经典切换范式', type: 'reading', status: 'done',
+      o: 2, m: 4, p: 8, size: 'm', priority: 1, started: 34, finished: 28, labels: '["lit"]', updated: 28 },
+    { id: 't2', pid: 'p1', title: '搭建切换范式程序', type: 'coding', status: 'doing',
+      o: 3, m: 6, p: 12, size: 'l', priority: 2, started: 8, focused: 8,
+      bucket: 'week', anchor: 8, labels: '["exp"]', notes: '卡在随机化逻辑，先跑通最小可用版本。', updated: 8 },
+    { id: 't3', pid: 'p1', title: '分析数据并撰写初稿', type: 'writing', status: 'review',
+      o: 4, m: 8, p: 16, size: 'm', priority: 3, started: 12, notes: '已发导师，等反馈。', updated: 11 },
+    { id: 't4', pid: 'p2', title: '精读两篇核心论文', type: 'reading', status: 'todo',
+      o: 2, m: 4, p: 6, size: 's', priority: 1, focused: 2, bucket: 'week', anchor: 2, labels: '["lit"]', updated: 2 },
+    { id: 't5', pid: 'p2', title: '整理上周组会笔记', type: 'writing', status: 'done',
+      o: 1, m: 2, p: 3, size: 's', priority: 2, started: 5, finished: 3, updated: 3 },
+    { id: 't6', pid: 'p3', title: '提交伦理审查材料', type: 'admin', status: 'blocked',
+      o: 1, m: 2, p: 6, size: 's', priority: 1, blocked: 4, notes: '等伦理委员会例会。', updated: 4 },
+  ];
+  for (const t of tasks) {
+    await prisma.task.upsert({
+      where: { id: t.id },
+      update: {},
+      create: {
+        id: t.id,
+        projectId: t.pid,
+        title: t.title,
+        type: t.type,
+        status: t.status,
+        estimateO: t.o,
+        estimateM: t.m,
+        estimateP: t.p,
+        size: t.size,
+        priority: t.priority,
+        milestoneId: t.pid === 'p1' ? 'm1' : null,
+        startedAt: agoOrNull(t.started),
+        finishedAt: agoOrNull(t.finished),
+        blockedAt: agoOrNull(t.blocked),
+        focusedAt: agoOrNull(t.focused),
+        timeframeBucket: t.bucket ?? null,
+        timeframeAnchor: agoOrNull(t.anchor),
+        labels: t.labels ?? null,
+        notes: t.notes ?? null,
+        updatedAt: ago(t.updated),
+      },
+    });
+  }
+
+  // Finish-to-start chain inside p1: t1 -> t2 -> t3. Keeps the criticalPath
+  // [t1, t2, t3] contract the scheduler tests assert.
+  const deps: Array<[string, string, string]> = [
+    ['d1', 't1', 't2'],
+    ['d2', 't2', 't3'],
+  ];
+  for (const [id, fromTaskId, toTaskId] of deps) {
+    await prisma.dependency.upsert({
+      where: { id },
+      update: {},
+      create: { id, projectId: 'p1', fromTaskId, toTaskId, type: 'FS' },
+    });
+  }
+
+  // Notes: two project-scoped, two unfiled inbox captures (projectId null).
+  // #hashtags in the body are extracted into tags via mergeTags, so search,
+  // the inbox and the project notes tabs all have real content to show.
+  if (createdById) {
+    const notes: Array<[string, string | null, string, number]> = [
+      ['n1', 'p1', '#planning 不押 deadline：先把范式调通，再开始正式采集。伦理批复 #blocked 是当前最大的不确定。', 8],
+      ['n2', 'p2', '#reading Liu 2025 的 dual-task 操纵做得很干净，组会重点讲这篇。', 2],
+      ['n3', null, '#inbox 招募文案要不要单独写一版？多半归到「多任务切换研究」。 #recruit', 3],
+      ['n4', null, '#inbox 存一篇 mind-wandering 综述，之后再读。 #lit', 1],
+    ];
+    for (const [id, projectId, body, createdDaysAgo] of notes) {
+      await prisma.note.upsert({
+        where: { id },
+        update: {},
+        create: {
+          id,
+          workspaceId: demoWorkspaceId,
+          projectId,
+          createdById,
+          body,
+          tags: JSON.stringify(mergeTags(undefined, body)),
+          createdAt: ago(createdDaysAgo),
+          updatedAt: ago(createdDaysAgo),
+        },
+      });
+    }
+  }
 }
 
 export async function seed(prisma: PrismaClient): Promise<void> {

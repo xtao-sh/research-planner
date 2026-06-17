@@ -39,6 +39,7 @@ import type { WorkspaceRole } from './workspace';
 import { emitEvent, diffFields } from './events';
 import { mergeTags, toNote, parseTags } from './notes';
 import { toArtifact } from './artifacts';
+import { ensureRuntimeSchema } from './migrate';
 import type { EventRecord, InviteRecord, InvitePreview } from '@rp/shared';
 import {
   defaultWeeklyHoursJSON,
@@ -3210,6 +3211,15 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
 
 async function main() {
   const prisma = new PrismaClient({ log: ['error'] });
+  // Upgrade safety net: an existing user's DB (shipped pre-seeded, never
+  // touched on upgrade) may lack columns/tables the current code expects.
+  // Apply additive deltas before anything queries them. Idempotent on a
+  // fresh DB.
+  const { applied } = await ensureRuntimeSchema(prisma, (m) => console.log(m));
+  if (applied.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`runtime-migrate: applied ${applied.join(', ')}`);
+  }
   await seed(prisma);
   const app = await buildServer(prisma);
   const port = Number(process.env.PORT || 4000);

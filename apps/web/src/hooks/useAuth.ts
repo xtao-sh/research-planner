@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AuthUser,
   fetchMe,
@@ -58,5 +58,8 @@ export function useAuth(): UseAuth {
     setUser(null);
   }, []);
 
-  return { user, loading, login, register, logout };
+  return useMemo(
+    () => ({ user, loading, login, register, logout }),
+    [user, loading, login, register, logout]
+  );
 }

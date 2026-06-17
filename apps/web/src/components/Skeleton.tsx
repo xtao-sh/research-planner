@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /** A row of skeleton placeholders for a single task/note line. */
 export function SkeletonRow() {
@@ -13,8 +14,9 @@ export function SkeletonRow() {
 
 /** A grid of skeleton rows for any list-style surface. Default = 4 rows. */
 export function SkeletonList({ rows = 4 }: { rows?: number }) {
+  const { t } = useTranslation();
   return (
-    <div role="status" aria-label="Loading">
+    <div role="status" aria-label={t('common.loading')}>
       {Array.from({ length: rows }).map((_, i) => (
         // eslint-disable-next-line react/no-array-index-key -- placeholder skeletons; index IS the slot identity
         <SkeletonRow key={i} />

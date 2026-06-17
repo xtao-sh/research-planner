@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Task } from '@rp/shared';
 import { readJson, readString, writeJson, writeString } from '../../utils/storage';
 
@@ -125,8 +125,11 @@ export function useIntensityBudget(): number {
 /** Hook — returns the WIP limit map for a project, re-rendering on settings
  *  change. */
 export function useWipLimits(projectId: string | null | undefined): WipLimits {
-  useSettingsTick();
-  return getWipLimits(projectId || '');
+  const tick = useSettingsTick();
+  // Memoize so the localStorage JSON.parse only re-runs when settings
+  // actually change or the project changes — not on every unrelated render
+  // of a consumer (the parsed object also kept a fresh identity each call).
+  return useMemo(() => getWipLimits(projectId || ''), [tick, projectId]);
 }
 
 /** Generic hook that just exposes the change-tick — components can call

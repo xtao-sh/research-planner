@@ -108,7 +108,7 @@ const EMPTY_RESULTS: SearchResults = {
  * workspace the caller is a member of.
  */
 export function SearchPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { projects } = useAppData();
 
@@ -210,7 +210,7 @@ export function SearchPage() {
       <div className="rd-topbar">
         <h1>{t('nav.search')}</h1>
         {trimmed && (
-          <span className="rd-meta">
+          <span className="rd-meta" aria-live="polite" aria-atomic="true">
             {loading
               ? t('search.searching', { defaultValue: 'Searching…' })
               : t('search.resultCount', { n: totalMatches })}
@@ -420,7 +420,7 @@ export function SearchPage() {
                   >
                     <div className="rd-stamp">
                       <span aria-hidden>📝</span>
-                      <span>{new Date(note.createdAt).toLocaleString()}</span>
+                      <span>{new Date(note.createdAt).toLocaleString(i18n.language)}</span>
                       {projectName && <span>· {projectName}</span>}
                     </div>
                     <div className="rd-body">

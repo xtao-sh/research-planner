@@ -60,7 +60,7 @@ function parseTab(value: string | null): ProjectTab {
 }
 
 export function ProjectDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
@@ -933,8 +933,8 @@ export function ProjectDetailPage() {
                         <div className="warning-item-title">{task.title}</div>
                         <div className="warning-item-details">
                           {t('warning.expectedFinish')}:
-                          {new Date(item.endPlanned).toLocaleDateString()} | {t('warning.hardDue')}:
-                          {new Date(task.dueHard!).toLocaleDateString()}
+                          {new Date(item.endPlanned).toLocaleDateString(i18n.language)} | {t('warning.hardDue')}:
+                          {new Date(task.dueHard!).toLocaleDateString(i18n.language)}
                         </div>
                       </div>
                       <div className="warning-item-badge">{t('warning.delayDays', { days: delay })}</div>
@@ -965,8 +965,8 @@ export function ProjectDetailPage() {
                         <div className="warning-item-title">{task.title}</div>
                         <div className="warning-item-details">
                           {t('warning.expectedFinish')}:
-                          {new Date(schedItem.endPlanned).toLocaleDateString()} | {t('warning.softDue')}:
-                          {new Date(task.dueSoft!).toLocaleDateString()}
+                          {new Date(schedItem.endPlanned).toLocaleDateString(i18n.language)} | {t('warning.softDue')}:
+                          {new Date(task.dueSoft!).toLocaleDateString(i18n.language)}
                         </div>
                       </div>
                       <div

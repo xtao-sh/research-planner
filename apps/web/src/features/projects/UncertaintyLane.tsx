@@ -46,7 +46,7 @@ const PAD_X = 16;
 const CORE_H = 22;
 
 export function UncertaintyLane({ items, tasks, cpSet, milestones, projectStart, overlay }: UncertaintyLaneProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [chartW, setChartW] = useState(720);
 
@@ -264,7 +264,7 @@ export function UncertaintyLane({ items, tasks, cpSet, milestones, projectStart,
           const tfTickTitle =
             showTfTick && tfEndMs != null
               ? t('lane.timeframeEnd', {
-                  date: new Date(tfEndMs).toLocaleDateString(),
+                  date: new Date(tfEndMs).toLocaleDateString(i18n.language),
                 })
               : '';
 
@@ -284,7 +284,7 @@ export function UncertaintyLane({ items, tasks, cpSet, milestones, projectStart,
               key={it.taskId}
               className="rd-lane-row"
               data-status={status}
-              title={`${tk.title} · ${tk.estimate.o}–${tk.estimate.p}h (likely ${tk.estimate.m})`}
+              title={`${tk.title} · ${t("now.loadEstimateRange", { o: tk.estimate.o, p: tk.estimate.p, m: tk.estimate.m })}`}
             >
               <div className="rd-left">
                 <div className="rd-title">

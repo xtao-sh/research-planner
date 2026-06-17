@@ -216,6 +216,9 @@ export function ProjectNotesTab({
                           key={tag}
                           className="rd-tag"
                           onClick={() => setFilter(tag)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFilter(tag); } }}
+                          role="button"
+                          tabIndex={0}
                           title={t('search.openedFromTag', { tag })}
                           style={{ cursor: 'pointer' }}
                         >
@@ -243,6 +246,9 @@ export function ProjectNotesTab({
                 key={tag}
                 className="rd-tag"
                 onClick={() => setFilter(tag)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFilter(tag); } }}
+                role="button"
+                tabIndex={0}
                 title={t('search.openedFromTag', { tag })}
                 style={{ cursor: 'pointer' }}
               >

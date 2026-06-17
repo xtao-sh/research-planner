@@ -250,7 +250,7 @@ export function AppLayout() {
         onClick={() => setMobileOpen(false)}
         aria-hidden="true"
       />
-      <aside className="app-shell-sidebar" aria-label="Sidebar">
+      <aside className="app-shell-sidebar" aria-label={t("nav.sidebarLandmark")}>
         {/* Brand cluster — icon tile + name + sub. The same SVG as the
             favicon and the install/dock icon, so the brand reads
             consistently across tab, dock, and in-app surfaces. */}
@@ -280,7 +280,7 @@ export function AppLayout() {
         </button>
 
         {/* Primary nav. NavLink handles the active class via isActive. */}
-        <nav className="rd-nav-group" aria-label="Primary">
+        <nav className="rd-nav-group" aria-label={t("nav.primaryNav")}>
           {navItems.map((it) => (
             <NavLink
               key={it.to}

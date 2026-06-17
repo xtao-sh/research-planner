@@ -92,6 +92,11 @@
   --text-secondary: var(--ink-500);
   --text-tertiary:  var(--ink-300);
   --text-light:     var(--ink-300);
+  /* Legacy alias referenced via var(--muted-color, #666) at ~16 sites that
+     never defined it — they all fell back to a hardcoded #666 that fails
+     AA on the dark surface. Alias to the secondary-text token (switches
+     per theme). */
+  --muted-color:    var(--ink-500);
 
   /* Spacing — 4px scale, 7 stops */
   --s-1: 4px;   --space-1: 0.25rem;
@@ -1020,6 +1025,13 @@ h4 {
   color: var(--text-tertiary);
 }
 .task-meta-date { color: var(--text-tertiary); }
+/* Monospace + tabular-nums utility. Referenced ~6x (kbd hints, date/
+   estimate spans) but never defined — numeric columns lost their
+   alignment. Mirrors the .task-meta-item numeric treatment. */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
 .task-meta-due { color: var(--text-secondary); }
 
 .meta-icon {
@@ -1532,7 +1544,7 @@ h4 {
   content: '→';
   color: var(--secondary-color);
   font-size: 1.5rem;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .impact-item-content {
@@ -5075,6 +5087,12 @@ h4 {
   --type-personal: oklch(0.62 0.14 245);
   --type-other:    oklch(0.55 0.01 85);
 
+  /* Gantt overlay colors — were hardcoded hex in Gantt.tsx (active bar +
+     soft-due amber) that didn't switch in dark mode. Dark overrides in the
+     [data-theme="dark"] block. */
+  --rd-gantt-bar:  #3B5BDB;
+  --rd-gantt-soft: #E5B23A;
+
   /* Light-mode tints for the per-type top stripe on .rd-proj-card.
      Dark mode overrides these in the [data-theme="dark"] block below. */
   --rd-ptype-tint-research: oklch(0.96 0.03 295);
@@ -6223,6 +6241,7 @@ button.rd-briefing-cell:active {
 .rd-flow-card .rd-age {
   margin-left: auto;
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   font-size: 10.5px;
   color: var(--rd-ink-3);
 }
@@ -6950,6 +6969,15 @@ button.rd-briefing-cell:active {
   --text-primary:   oklch(0.96 0.005 85);
   --text-secondary: oklch(0.78 0.01 85);
   --text-tertiary:  oklch(0.62 0.01 85);
+  /* Dark override for the legacy --muted-color alias (was undefined → the
+     #666 fallback failed AA on dark). Matches dark --text-secondary L. */
+  --muted-color:    oklch(0.78 0.01 85);
+  /* --accent-soft (light pink #FBE2DD) bled onto dark surfaces in ~13
+     rules (active nav, focus tint/ring, selection chips). */
+  --accent-soft:    oklch(0.28 0.05 28);
+  /* Gantt overlay colors — lifted-L dark variants of the light hex. */
+  --rd-gantt-bar:   oklch(0.70 0.15 265);
+  --rd-gantt-soft:  oklch(0.78 0.13 80);
 }
 
 /* =========================================================================

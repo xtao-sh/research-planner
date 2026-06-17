@@ -377,6 +377,7 @@ const SortableFlowCard = React.memo(
     transition,
     isDragging,
   } = useSortable({ id: task.id, disabled: dndDisabled });
+  const { i18n } = useTranslation();
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -436,7 +437,7 @@ const SortableFlowCard = React.memo(
             title={dueHardLabel}
           >
             ⏰{' '}
-            {new Date(task.dueHard).toLocaleDateString(undefined, {
+            {new Date(task.dueHard).toLocaleDateString(i18n.language, {
               month: '2-digit',
               day: '2-digit',
             })}

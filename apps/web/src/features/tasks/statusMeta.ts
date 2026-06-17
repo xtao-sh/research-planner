@@ -3,12 +3,15 @@
 // status badges and as the leading-rule color on /now task rows.
 import type { Task } from '@rp/shared';
 
+// Theme-aware: point at the --rd-st-* CSS tokens, which switch in dark
+// mode (the bare hex did not). All consumers use these in inline
+// `style={{ background: ... }}`, where a CSS var resolves fine.
 export const STATUS_COLOR: Record<Task['status'], string> = {
-  todo: '#8a8478',     // graphite — matches --status-todo
-  doing: '#2f5dc8',    // vivid blue — matches --status-doing
-  blocked: '#b73420',  // vivid red — matches --status-blocked
-  review: '#c4881e',   // vivid amber — matches --status-review
-  done: '#2f6d3a',     // vivid moss — matches --status-done
+  todo: 'var(--rd-st-todo)',
+  doing: 'var(--rd-st-doing)',
+  blocked: 'var(--rd-st-blocked)',
+  review: 'var(--rd-st-review)',
+  done: 'var(--rd-st-done)',
 };
 
 // One-click cycle order (skips `blocked` — that's a directed state set

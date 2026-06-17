@@ -28,7 +28,7 @@ export function ReviewReport({
   notes,
   onAddTask,
 }: ReviewReportProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [period, setPeriod] = useState<ReportPeriod>('week');
 
   const data = useMemo(() => {
@@ -109,7 +109,7 @@ export function ReviewReport({
   }, [tasks, schedule, notes, period]);
 
   const formatDate = (date: Date) =>
-    date.toLocaleDateString(undefined, {
+    date.toLocaleDateString(i18n.language, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -118,7 +118,7 @@ export function ReviewReport({
   const formatDateTime = (iso?: string) => {
     if (!iso) return '';
     const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
+    return d.toLocaleDateString(i18n.language, {
       month: 'short',
       day: 'numeric',
     });

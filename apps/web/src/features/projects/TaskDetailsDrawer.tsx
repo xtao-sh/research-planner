@@ -378,7 +378,7 @@ export function TaskDetailsDrawer({
               </h4>
 
               <fieldset
-                style={{ border: '1px solid #ddd', borderRadius: 6, padding: 8 }}
+                style={{ border: '1px solid var(--border-color, #ddd)', borderRadius: 6, padding: 8 }}
               >
                 <legend style={{ fontSize: 12 }}>{t('task.predecessors')}</legend>
                 <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>

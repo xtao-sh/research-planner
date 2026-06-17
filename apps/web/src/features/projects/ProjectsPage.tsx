@@ -186,6 +186,7 @@ function FilterPill({
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       className={active ? 'filter-pill active' : 'filter-pill'}
       style={

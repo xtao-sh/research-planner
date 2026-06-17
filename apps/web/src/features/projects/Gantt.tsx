@@ -344,7 +344,7 @@ export function Gantt({ items, tasks, cpSet, milestones, overlay }: GanttProps) 
                 the chart — saves them from collisions with bars. */}
             {visibleMilestones.map(({ m, dateISO, isHard }) => {
               const mx = xFor(dateISO);
-              const color = isHard ? 'var(--accent)' : '#E5B23A';
+              const color = isHard ? 'var(--accent)' : 'var(--rd-gantt-soft)';
               return (
                 <g key={`m-${m.id}`}>
                   <line
@@ -381,9 +381,9 @@ export function Gantt({ items, tasks, cpSet, milestones, overlay }: GanttProps) 
                     width={w}
                     height={BAR_H}
                     rx={4}
-                    fill="#9CA3AF"
+                    fill="var(--ink-300)"
                     opacity={0.32}
-                    stroke="#6B7280"
+                    stroke="var(--ink-500)"
                     strokeDasharray="3 2"
                   />
                 );
@@ -395,7 +395,7 @@ export function Gantt({ items, tasks, cpSet, milestones, overlay }: GanttProps) 
               const w = Math.max(4, xFor(it.endPlanned) - xFor(it.startPlanned));
               const y = HEADER_H + (ROW_H - BAR_H) / 2 + idx * ROW_H;
               const isCP = cpSet.has(it.taskId);
-              const fill = isCP ? 'var(--accent)' : '#3B5BDB';
+              const fill = isCP ? 'var(--accent)' : 'var(--rd-gantt-bar)';
               return (
                 <g key={it.taskId} className="task-bar">
                   <rect
@@ -423,7 +423,7 @@ export function Gantt({ items, tasks, cpSet, milestones, overlay }: GanttProps) 
                       x={x + w + 6}
                       y={y + BAR_H - 6}
                       fontSize={13}
-                      fill="#E5B23A"
+                      fill="var(--rd-gantt-soft)"
                       aria-label="soft-due violation"
                     >
                       ⚠

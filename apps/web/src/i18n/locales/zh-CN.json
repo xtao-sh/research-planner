@@ -412,6 +412,7 @@
   },
   "presence": {
     "viewing": "正在查看 {{project}}",
+    "label": "在线成员",
     "onWorkspace": "在工作区主页",
     "more": "其他 {{n}} 人",
     "tooltipAnon": "(匿名)"
@@ -739,6 +740,8 @@
   },
   "nav": {
     "now": "今日",
+    "sidebarLandmark": "侧边栏",
+    "primaryNav": "主导航",
     "inbox": "收件箱",
     "projects": "项目",
     "review": "回顾",

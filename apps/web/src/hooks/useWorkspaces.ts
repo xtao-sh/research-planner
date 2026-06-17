@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createWorkspace,
   listWorkspaces,
@@ -119,13 +119,16 @@ export function useWorkspaces(enabled: boolean): UseWorkspaces {
     };
   }, [enabled, applyWorkspaceList]);
 
-  return {
-    workspaces,
-    activeWorkspaceId,
-    setActiveWorkspaceId,
-    refresh,
-    createAndActivate,
-    loading,
-    error,
-  };
+  return useMemo(
+    () => ({
+      workspaces,
+      activeWorkspaceId,
+      setActiveWorkspaceId,
+      refresh,
+      createAndActivate,
+      loading,
+      error,
+    }),
+    [workspaces, activeWorkspaceId, setActiveWorkspaceId, refresh, createAndActivate, loading, error]
+  );
 }

@@ -62,7 +62,7 @@ export function PresenceBar({
   return (
     <div
       style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-      aria-label="presence"
+      aria-label={t('presence.label')}
     >
       {visible.map((m, idx) => {
         const pname = projectNameById(m.projectId);
@@ -110,8 +110,8 @@ export function PresenceBar({
             marginLeft: 2,
             padding: '2px 8px',
             borderRadius: 12,
-            background: '#e5e7eb',
-            color: '#374151',
+            background: 'var(--rd-surface-2, #e5e7eb)',
+            color: 'var(--rd-ink-2, #374151)',
             fontSize: 12,
             fontWeight: 500,
           }}

@@ -28,7 +28,7 @@ function intensityForTask(task: Task): number {
  *  rail. Shows projected intensity-load over the next 7 days, derived from
  *  task plan/due dates. Read-only: no fetches, no mutations. */
 export function CalendarCapacity() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { projects, projectTasks } = useAppData();
 
   const allTasks = useMemo<Task[]>(() => {
@@ -51,7 +51,7 @@ export function CalendarCapacity() {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const iso = localDayKey(d);
-      const weekday = d.toLocaleDateString(undefined, { weekday: 'short' });
+      const weekday = d.toLocaleDateString(i18n.language, { weekday: "short" });
       const date = `${d.getMonth() + 1}/${d.getDate()}`;
       list.push({ iso, weekday, date, load: 0 });
     }
@@ -99,7 +99,8 @@ export function CalendarCapacity() {
     }
 
     return list;
-  }, [allTasks]);
+    // i18n.language so weekday labels re-render on a live language switch.
+  }, [allTasks, i18n.language]);
 
   return (
     <div className="rd-capacity-card">

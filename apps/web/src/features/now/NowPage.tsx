@@ -39,7 +39,7 @@ function briefingDismissalKey(projectId: string) {
 }
 
 export function NowPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
   const {
@@ -213,7 +213,7 @@ export function NowPage() {
     : hour < 12 ? 'now.greetMorning'
     : hour < 18 ? 'now.greetAfternoon'
     : 'now.greetEvening';
-  const dateLine = now.toLocaleDateString(undefined, {
+  const dateLine = now.toLocaleDateString(i18n.language, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
@@ -1093,7 +1093,7 @@ function NowTaskRow({
           e.stopPropagation();
           if (onToggleFocus) onToggleFocus(task);
         }}
-        aria-label={isFocused ? 'Unpin' : 'Pin to top of mind'}
+        aria-label={isFocused ? t('task.unpinFocus') : t('task.pinFocus')}
         aria-pressed={isFocused}
       >
         {isFocused ? '★' : '☆'}

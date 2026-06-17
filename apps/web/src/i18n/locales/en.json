@@ -412,6 +412,7 @@
   },
   "presence": {
     "viewing": "viewing {{project}}",
+    "label": "Who's online",
     "onWorkspace": "on workspace home",
     "more": "+{{n}} more",
     "tooltipAnon": "(anonymous)"
@@ -743,6 +744,8 @@
   },
   "nav": {
     "now": "Now",
+    "sidebarLandmark": "Sidebar",
+    "primaryNav": "Primary",
     "inbox": "Inbox",
     "projects": "Projects",
     "review": "Review",

@@ -34,7 +34,7 @@ export function MembersPanel({
   onClose,
   onOwnerTransferred,
 }: MembersPanelProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -434,7 +434,7 @@ export function MembersPanel({
                         }}
                       >
                         {t('invite.expiresIn', {
-                          time: new Date(inv.expiresAt).toLocaleDateString(),
+                          time: new Date(inv.expiresAt).toLocaleDateString(i18n.language),
                         })}
                       </div>
                     </div>
@@ -649,7 +649,7 @@ export function MembersPanel({
                   flex: '1 1 auto',
                   fontSize: '0.75rem',
                   padding: '2px 6px',
-                  background: '#fff',
+                  background: 'var(--rd-surface, #fff)',
                   border: '1px solid var(--border-color, #ddd)',
                   borderRadius: 3,
                   overflow: 'auto',

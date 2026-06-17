@@ -7,6 +7,7 @@ import { getProjectTypeMeta } from '../projects/projectTypes';
 interface QuickCaptureModalProps {
   open: boolean;
   defaultProjectId?: string | null;
+  defaultTaskId?: string | null;
   onClose: () => void;
   onSaved?: (savedToProjectId: string | null) => void;
 }
@@ -22,14 +23,24 @@ interface QuickCaptureModalProps {
 export function QuickCaptureModal({
   open,
   defaultProjectId,
+  defaultTaskId,
   onClose,
   onSaved,
 }: QuickCaptureModalProps) {
   const { t } = useTranslation();
-  const { activeWorkspaceId, projects, refreshInbox, refreshProjects, bumpEventTick } = useAppData();
+  const {
+    activeWorkspaceId,
+    projects,
+    projectTasks,
+    refreshProjectTasks,
+    refreshInbox,
+    refreshProjects,
+    bumpEventTick,
+  } = useAppData();
 
   const [body, setBody] = useState('');
   const [projectId, setProjectId] = useState<string | null>(defaultProjectId ?? null);
+  const [taskId, setTaskId] = useState<string | null>(defaultTaskId ?? null);
   const [tagsRaw, setTagsRaw] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,13 +67,21 @@ export function QuickCaptureModal({
     if (open) {
       setBody('');
       setProjectId(defaultProjectId ?? null);
+      setTaskId(defaultTaskId ?? null);
       setTagsRaw('');
       setError(null);
       setFeedback(null);
       // Autofocus the textarea after the next paint.
       scheduleTimeout(() => textareaRef.current?.focus(), 30);
     }
-  }, [open, defaultProjectId]);
+  }, [open, defaultProjectId, defaultTaskId]);
+
+  // Lazily populate the chosen project's task list so the optional task picker
+  // has options. Capture stays low-friction: this is best-effort and never
+  // blocks saving.
+  useEffect(() => {
+    if (open && projectId) void refreshProjectTasks(projectId);
+  }, [open, projectId, refreshProjectTasks]);
 
   // Cancel any pending timers when the modal closes or unmounts so that
   // late-firing focus/close handlers don't operate on a stale instance.
@@ -143,6 +162,7 @@ export function QuickCaptureModal({
       const note = await createNote({
         workspaceId: activeWorkspaceId,
         projectId: projectId ?? null,
+        taskId: taskId ?? null,
         body: trimmed,
         tags: parseTags(tagsRaw),
       });
@@ -199,6 +219,9 @@ export function QuickCaptureModal({
     ? projects.find((p) => p.id === projectId)
     : null;
   const activeProjectMeta = activeProject ? getProjectTypeMeta(activeProject.type) : null;
+  // Optional task picker: only available once a project with tasks is chosen.
+  const taskOptions = projectId ? projectTasks[projectId] ?? [] : [];
+  const activeTask = taskId ? taskOptions.find((tk) => tk.id === taskId) : null;
 
   return (
     <div className="rd-capture-backdrop" onClick={onClose}>
@@ -271,7 +294,10 @@ export function QuickCaptureModal({
             </span>
             <select
               value={projectId ?? ''}
-              onChange={(e) => setProjectId(e.target.value || null)}
+              onChange={(e) => {
+                setProjectId(e.target.value || null);
+                setTaskId(null);
+              }}
               aria-label={t('capture.projectLabel')}
               style={{
                 position: 'absolute',
@@ -291,6 +317,34 @@ export function QuickCaptureModal({
               })}
             </select>
           </label>
+          {/* Optional task picker — only when a project with tasks is chosen.
+              Capture stays structure-optional: this never blocks saving. */}
+          {projectId && taskOptions.length > 0 && (
+            <label
+              className="rd-chip"
+              style={{ cursor: 'pointer', position: 'relative' }}
+            >
+              <span>{activeTask ? activeTask.title : t('capture.taskOption')}</span>
+              <select
+                value={taskId ?? ''}
+                onChange={(e) => setTaskId(e.target.value || null)}
+                aria-label={t('capture.taskLabel')}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  opacity: 0,
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="">{t('capture.taskOption')}</option>
+                {taskOptions.map((tk) => (
+                  <option key={tk.id} value={tk.id}>
+                    {tk.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {/* Tags input as a chip — accepts comma-separated. Hashtags in
               the body auto-extract on the server too. */}
           <input

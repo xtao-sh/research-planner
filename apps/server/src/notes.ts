@@ -50,6 +50,7 @@ export function toNote(row: NoteRow): Note {
     id: row.id,
     workspaceId: row.workspaceId,
     projectId: row.projectId,
+    taskId: row.taskId,
     createdById: row.createdById,
     createdByEmail: row.createdBy?.email ?? null,
     body: row.body,

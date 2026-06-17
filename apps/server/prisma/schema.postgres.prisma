@@ -22,6 +22,7 @@ model User {
   invitesSent           Invite[]          @relation("InviteBy")
   invitesAccepted       Invite[]          @relation("InviteAccept")
   notes                 Note[]
+  artifacts             Artifact[]
 }
 
 model Session {
@@ -129,6 +130,7 @@ model Project {
   scenarios   Scenario[]
   events      Event[]
   notes       Note[]
+  artifacts   Artifact[]
 
   @@index([workspaceId])
 }
@@ -158,7 +160,7 @@ model Task {
   dueSoft       DateTime?
   dueHard       DateTime?
   // Fuzzy 'finish-in-about' bucket. One of 'week'/'month'/'quarter'/'year'/'someday'.
-  // Validated in zod at the API edge.
+  // Stored as a plain String; validated in zod at the API edge.
   timeframeBucket String?
   // When the bucket started counting. Server defaults to createdAt when
   // timeframeBucket is set but anchor isn't supplied.
@@ -173,6 +175,7 @@ model Task {
   milestone     Milestone? @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
   parentTask    Task?      @relation("TaskParent", fields: [parentTaskId], references: [id], onDelete: SetNull)
   children      Task[]     @relation("TaskParent")
+  notesLinked   Note[]
   depsFrom      Dependency[] @relation("DepFrom")
   depsTo        Dependency[] @relation("DepTo")
 
@@ -248,6 +251,7 @@ model Note {
   id           String    @id
   workspaceId  String
   projectId    String?
+  taskId       String?
   createdById  String
   body         String
   tags         String    @default("[]")
@@ -256,8 +260,28 @@ model Note {
 
   workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   project      Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  task         Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
   createdBy    User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, projectId])
   @@index([createdById, workspaceId])
+  @@index([taskId])
+}
+
+model Artifact {
+  id           String    @id
+  projectId    String
+  kind         String    // 'link' | 'file' | 'code' | 'data' | 'note' (validated in Zod)
+  title        String
+  url          String?
+  notes        String?
+  createdById  String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy    User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([createdById])
 }

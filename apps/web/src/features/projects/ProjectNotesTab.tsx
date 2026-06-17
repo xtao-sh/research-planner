@@ -21,7 +21,7 @@ interface ProjectNotesTabProps {
  * becomes a `.rd-tag-inline` span. Surrounding text is rendered as-is so
  * `white-space: pre-wrap` (from `.rd-note .rd-body`) keeps newlines.
  */
-function renderBodyWithHashtags(body: string): React.ReactNode[] {
+export function renderBodyWithHashtags(body: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   // Match #tag with Unicode letters/numbers/_/-, but not when preceded by a non-space.
   const regex = /(^|\s)(#[\p{L}\p{N}_-]+)/gu;

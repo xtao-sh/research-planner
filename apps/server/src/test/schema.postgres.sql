@@ -185,6 +185,7 @@ CREATE TABLE "Note" (
     "id" TEXT NOT NULL,
     "workspaceId" TEXT NOT NULL,
     "projectId" TEXT,
+    "taskId" TEXT,
     "createdById" TEXT NOT NULL,
     "body" TEXT NOT NULL,
     "tags" TEXT NOT NULL DEFAULT '[]',
@@ -192,6 +193,21 @@ CREATE TABLE "Note" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Note_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Artifact" (
+    "id" TEXT NOT NULL,
+    "projectId" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "url" TEXT,
+    "notes" TEXT,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Artifact_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -235,10 +251,21 @@ CREATE INDEX "Project_workspaceId_idx" ON "Project"("workspaceId");
 
 -- CreateIndex
 CREATE INDEX "Task_projectId_idx" ON "Task"("projectId");
+
+-- CreateIndex
 CREATE INDEX "Task_parentTaskId_idx" ON "Task"("parentTaskId");
 
 -- CreateIndex
+CREATE INDEX "Task_projectId_status_idx" ON "Task"("projectId", "status");
+
+-- CreateIndex
+CREATE INDEX "Task_projectId_parentTaskId_idx" ON "Task"("projectId", "parentTaskId");
+
+-- CreateIndex
 CREATE INDEX "Dependency_projectId_idx" ON "Dependency"("projectId");
+
+-- CreateIndex
+CREATE INDEX "Dependency_toTaskId_idx" ON "Dependency"("toTaskId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Dependency_fromTaskId_toTaskId_key" ON "Dependency"("fromTaskId", "toTaskId");
@@ -262,13 +289,13 @@ CREATE INDEX "Note_workspaceId_projectId_idx" ON "Note"("workspaceId", "projectI
 CREATE INDEX "Note_createdById_workspaceId_idx" ON "Note"("createdById", "workspaceId");
 
 -- CreateIndex
-CREATE INDEX "Task_projectId_status_idx" ON "Task"("projectId", "status");
+CREATE INDEX "Note_taskId_idx" ON "Note"("taskId");
 
 -- CreateIndex
-CREATE INDEX "Task_projectId_parentTaskId_idx" ON "Task"("projectId", "parentTaskId");
+CREATE INDEX "Artifact_projectId_idx" ON "Artifact"("projectId");
 
 -- CreateIndex
-CREATE INDEX "Dependency_toTaskId_idx" ON "Dependency"("toTaskId");
+CREATE INDEX "Artifact_createdById_idx" ON "Artifact"("createdById");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_defaultWorkspaceId_fkey" FOREIGN KEY ("defaultWorkspaceId") REFERENCES "Workspace"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -305,6 +332,8 @@ ALTER TABLE "Task" ADD CONSTRAINT "Task_projectId_fkey" FOREIGN KEY ("projectId"
 
 -- AddForeignKey
 ALTER TABLE "Task" ADD CONSTRAINT "Task_milestoneId_fkey" FOREIGN KEY ("milestoneId") REFERENCES "Milestone"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Task" ADD CONSTRAINT "Task_parentTaskId_fkey" FOREIGN KEY ("parentTaskId") REFERENCES "Task"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -338,5 +367,14 @@ ALTER TABLE "Note" ADD CONSTRAINT "Note_workspaceId_fkey" FOREIGN KEY ("workspac
 ALTER TABLE "Note" ADD CONSTRAINT "Note_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Note" ADD CONSTRAINT "Note_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "Task"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Note" ADD CONSTRAINT "Note_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Artifact" ADD CONSTRAINT "Artifact_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "Project"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Artifact" ADD CONSTRAINT "Artifact_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

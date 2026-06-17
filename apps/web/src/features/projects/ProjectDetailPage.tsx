@@ -11,9 +11,9 @@ import type {
 } from '@rp/shared';
 import { getProjectNotes } from '../../api/notes';
 import type { DurationMode } from '@rp/scheduler';
-// NOTE: DependencyGraph, WeekView, SearchPanel, ExportDialog, ProjectArtifactsTab,
-// ProjectTimelineTab were intentionally cut from the project detail UI as part
-// of the strategic refocus. Components remain on disk but have no entry point.
+// NOTE: DependencyGraph, WeekView, SearchPanel, ExportDialog were intentionally
+// cut from the project detail UI as part of the strategic refocus. Components
+// remain on disk but have no entry point.
 import { KanbanView } from '../../components/KanbanView';
 import { ReviewReport } from '../../components/ReviewReport';
 import { fetchJson, sendJson } from '../../api/client';
@@ -27,6 +27,7 @@ import {
 // MilestonePanel removed from the rendered tree — handlers kept for
 // future re-introduction. Component file remains on disk.
 import { ProjectNotesTab } from './ProjectNotesTab';
+import { ProjectArtifactsTab } from './ProjectArtifactsTab';
 import { ProjectTimelineTab } from './ProjectTimelineTab';
 import { canWrite as canWriteRole } from '../workspaces/permissions';
 import { useAppData } from '../../contexts/AppDataContext';
@@ -49,8 +50,8 @@ import { useToast } from '../../components/Toast';
 // 'dependencies' and 'week' components remain on disk but are unreachable.
 type ViewMode = 'gantt' | 'kanban';
 
-type ProjectTab = 'tasks' | 'notes' | 'timeline';
-const PROJECT_TABS: ProjectTab[] = ['tasks', 'notes', 'timeline'];
+type ProjectTab = 'tasks' | 'notes' | 'artifacts' | 'timeline';
+const PROJECT_TABS: ProjectTab[] = ['tasks', 'notes', 'artifacts', 'timeline'];
 
 function parseTab(value: string | null): ProjectTab {
   if (value && (PROJECT_TABS as string[]).includes(value)) {
@@ -849,11 +850,13 @@ export function ProjectDetailPage() {
                 const labelMap: Record<ProjectTab, string> = {
                   tasks: t('projectTabs.tasks'),
                   notes: t('projectTabs.notes'),
+                  artifacts: t('projectTabs.artifacts'),
                   timeline: t('projectTabs.timeline'),
                 };
                 const countMap: Record<ProjectTab, number | null> = {
                   tasks: tasks.length,
                   notes: projectNotes.length,
+                  artifacts: null,
                   timeline: null,
                 };
                 const count = countMap[tab];
@@ -883,6 +886,14 @@ export function ProjectDetailPage() {
               onOpenCapture={() =>
                 window.dispatchEvent(new CustomEvent('rp:open-capture'))
               }
+            />
+          )}
+
+          {activeTab === 'artifacts' && projectId && (
+            <ProjectArtifactsTab
+              projectId={projectId}
+              refreshTrigger={eventTick}
+              canWrite={canWriteActiveWorkspace}
             />
           )}
 
@@ -1113,6 +1124,7 @@ export function ProjectDetailPage() {
             onAddDependency={handleAddDependency}
             onRemoveDependency={handleRemoveDependency}
             onApplyPatch={applyTaskPatch}
+            projectNotes={projectNotes}
           />
 
           <TaskTreeDrawer

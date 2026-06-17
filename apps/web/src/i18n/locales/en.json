@@ -160,6 +160,11 @@
     "filterNone": "No timeframe"
   },
   "task": {
+    "notesStrip": {
+      "title": "Notes on this task",
+      "empty": "No notes linked to this task yet",
+      "add": "Capture into this task"
+    },
     "management": "Task management",
     "list": "Task list",
     "newTask": "New task",
@@ -340,6 +345,9 @@
     "switchTo": "Switch language"
   },
   "event": {
+    "artifactCreated": "added artifact {{title}}",
+    "artifactUpdated": "updated artifact {{title}}",
+    "artifactDeleted": "removed artifact {{title}}",
     "activityFeed": "Activity",
     "empty": "No activity yet",
     "loadMore": "Load more",
@@ -490,6 +498,8 @@
     "viewer": "Viewer"
   },
   "artifact": {
+    "deleteConfirm": "Delete this artifact? This cannot be undone.",
+    "loadError": "Failed to load artifacts",
     "panel": "🗂️ Artifacts",
     "addArtifact": "+ Add artifact",
     "typeLabel": "Artifact type",
@@ -776,6 +786,21 @@
     "helper": "Cards show size × intensity, not estimated minutes. Drag to move; status time auto-records."
   },
   "now": {
+    "dailyCheckin": {
+      "title": "Daily check-in",
+      "headline": "A quick look, not a report card.",
+      "yesterday": "Since yesterday",
+      "yesterdayQuiet": "Quiet day — nothing logged.",
+      "today": "Pinned for today",
+      "todayNone": "Nothing pinned yet.",
+      "blockers": "Blocked",
+      "blockersNone": "Nothing blocked.",
+      "pinnedCount": "{{n}} pinned",
+      "blockedCount": "{{n}} blocked",
+      "unblockCta": "Still on it — unblock",
+      "pinCta": "Pin a task →",
+      "dismiss": "Done for today"
+    },
     "errorToggleFocus": "Couldn't toggle focus pin. Try again.",
     "errorApplyPatch": "Couldn't update task. Try again.",
     "loadingSummary": "Loading your tasks…",
@@ -892,6 +917,8 @@
     "backToNow": "Back to Now"
   },
   "capture": {
+    "taskLabel": "Task (optional)",
+    "taskOption": "(no task)",
     "title": "Quick capture",
     "placeholder": "Jot an idea, link, question… ⌘⇧Enter to save",
     "projectLabel": "Project",

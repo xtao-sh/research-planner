@@ -45,6 +45,7 @@ export function AppLayout() {
   );
 
   const [showCapture, setShowCapture] = useState(false);
+  const [captureTaskId, setCaptureTaskId] = useState<string | null>(null);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
@@ -158,7 +159,11 @@ export function AppLayout() {
   // layout API tiny.
   React.useEffect(() => {
     const newProj = () => openNewProject();
-    const openCap = () => setShowCapture(true);
+    const openCap = (e: Event) => {
+      const detail = (e as CustomEvent<{ taskId?: string | null }>).detail;
+      setCaptureTaskId(detail?.taskId ?? null);
+      setShowCapture(true);
+    };
     window.addEventListener('rp:new-project', newProj);
     window.addEventListener('rp:open-capture', openCap);
     return () => {
@@ -454,7 +459,11 @@ export function AppLayout() {
       <QuickCaptureModal
         open={showCapture}
         defaultProjectId={captureDefaultProjectId}
-        onClose={() => setShowCapture(false)}
+        defaultTaskId={captureTaskId}
+        onClose={() => {
+          setShowCapture(false);
+          setCaptureTaskId(null);
+        }}
       />
 
       <ShortcutsHelpModal

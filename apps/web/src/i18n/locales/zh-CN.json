@@ -160,6 +160,11 @@
     "filterNone": "未设时段"
   },
   "task": {
+    "notesStrip": {
+      "title": "该任务的笔记",
+      "empty": "还没有笔记挂到这个任务上",
+      "add": "记一笔到此任务"
+    },
     "management": "任务管理",
     "list": "任务列表",
     "newTask": "新建任务",
@@ -340,6 +345,9 @@
     "switchTo": "切换语言"
   },
   "event": {
+    "artifactCreated": "添加了产出 {{title}}",
+    "artifactUpdated": "更新了产出 {{title}}",
+    "artifactDeleted": "删除了产出 {{title}}",
     "activityFeed": "活动",
     "empty": "暂无活动",
     "loadMore": "加载更多",
@@ -490,6 +498,8 @@
     "viewer": "查看者"
   },
   "artifact": {
+    "deleteConfirm": "确定删除该产出？此操作无法撤销。",
+    "loadError": "加载产出失败",
     "panel": "🗂️ 产出管理",
     "addArtifact": "+ 添加产出",
     "typeLabel": "产出类型",
@@ -772,6 +782,21 @@
     "helper": "卡片大小 × 强度，而非分钟估算。拖动调整状态；状态时间自动记录。"
   },
   "now": {
+    "dailyCheckin": {
+      "title": "每日回顾",
+      "headline": "随手看一眼，不是打分。",
+      "yesterday": "昨天以来",
+      "yesterdayQuiet": "平静的一天——没有记录。",
+      "today": "今日置顶",
+      "todayNone": "还没有置顶任务。",
+      "blockers": "受阻",
+      "blockersNone": "没有受阻任务。",
+      "pinnedCount": "{{n}} 项置顶",
+      "blockedCount": "{{n}} 项受阻",
+      "unblockCta": "还在做——解除阻塞",
+      "pinCta": "置顶一个任务 →",
+      "dismiss": "今天就到这"
+    },
     "errorToggleFocus": "切换焦点失败，请稍后再试。",
     "errorApplyPatch": "更新任务失败，请稍后再试。",
     "loadingSummary": "正在加载任务…",
@@ -888,6 +913,8 @@
     "backToNow": "返回今日"
   },
   "capture": {
+    "taskLabel": "任务（可选）",
+    "taskOption": "（不挂任务）",
     "title": "速记",
     "placeholder": "记下一个想法、引用、问题…按 ⌘⇧Enter 保存",
     "projectLabel": "归属项目",

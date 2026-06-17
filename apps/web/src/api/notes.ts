@@ -8,6 +8,7 @@ import { fetchJson, sendJson } from './client';
 export interface CreateNotePayload {
   workspaceId: string;
   projectId?: string | null;
+  taskId?: string | null;
   body: string;
   tags?: string[];
 }
@@ -32,6 +33,7 @@ export interface UpdateNotePayload {
   body?: string;
   tags?: string[];
   projectId?: string | null;
+  taskId?: string | null;
 }
 
 export async function updateNote(

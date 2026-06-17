@@ -38,6 +38,7 @@ import {
 import type { WorkspaceRole } from './workspace';
 import { emitEvent, diffFields } from './events';
 import { mergeTags, toNote, parseTags } from './notes';
+import { toArtifact } from './artifacts';
 import type { EventRecord, InviteRecord, InvitePreview } from '@rp/shared';
 import {
   defaultWeeklyHoursJSON,
@@ -183,6 +184,27 @@ async function checkMilestone(
   });
   if (!m) return 'missing';
   if (m.projectId !== projectId) return 'cross-project';
+  return 'ok';
+}
+
+/**
+ * Validate a note's optional taskId against a project, mirroring
+ * checkMilestone: the task must exist AND belong to the same project, else we
+ * either FK-violate (cross/null project) or silently attach a foreign task.
+ * Returns 'ok' | 'missing' | 'cross-project'.
+ */
+async function checkTask(
+  prismaClient: PrismaClient | Prisma.TransactionClient,
+  taskId: string | null | undefined,
+  projectId: string | null
+): Promise<'ok' | 'missing' | 'cross-project'> {
+  if (!taskId) return 'ok';
+  const tk = await prismaClient.task.findUnique({
+    where: { id: taskId },
+    select: { projectId: true },
+  });
+  if (!tk) return 'missing';
+  if (!projectId || tk.projectId !== projectId) return 'cross-project';
   return 'ok';
 }
 
@@ -339,6 +361,23 @@ const scenarioCreateSchema = z.object({
   durationMode: z.enum(['expected', 'optimistic', 'pessimistic']),
 });
 
+const artifactKindSchema = z.enum(['link', 'file', 'code', 'data', 'note']);
+
+const artifactCreateSchema = z.object({
+  kind: artifactKindSchema,
+  title: z.string().trim().min(1).max(200),
+  url: z.string().trim().max(2000).optional(),
+  notes: z.string().max(50_000).optional(),
+});
+
+const artifactUpdateSchema = z.object({
+  kind: artifactKindSchema.optional(),
+  title: z.string().trim().min(1).max(200).optional(),
+  // null clears the field; string sets it.
+  url: z.union([z.string().trim().max(2000), z.null()]).optional(),
+  notes: z.union([z.string().max(50_000), z.null()]).optional(),
+});
+
 // Email validator: permissive — accepts forms like "demo@local" (no TLD) so
 // local/dev accounts work. Requires exactly one '@' with non-empty local and
 // domain parts.
@@ -448,6 +487,7 @@ const projectListQuerySchema = z.object({
 const noteCreateSchema = z.object({
   workspaceId: z.string().min(1),
   projectId: z.string().min(1).optional(),
+  taskId: z.string().min(1).optional(),
   body: z.string().min(1).max(50_000),
   tags: z.array(z.string().min(1).max(50)).max(20).optional(),
 });
@@ -457,6 +497,8 @@ const noteUpdateSchema = z.object({
   tags: z.array(z.string().min(1).max(50)).max(20).optional(),
   // null = move back to inbox; string = file to that project
   projectId: z.union([z.string().min(1), z.null()]).optional(),
+  // null = unlink from task; string = link to that task (same project)
+  taskId: z.union([z.string().min(1), z.null()]).optional(),
 });
 
 const notePromoteSchema = z.object({
@@ -2465,22 +2507,160 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
     return rep.code(204).send();
   });
 
+  // ---------------- Artifacts (project attachments) ----------------
+
+  app.get('/api/projects/:id/artifacts', async (req, rep) => {
+    const id = (req.params as { id: string }).id;
+    const owned = await assertProjectAccess(prisma, id, req.user!.id);
+    if (!owned) return rep.code(404).send({ message: 'Not found' });
+    const rows = await prisma.artifact.findMany({
+      where: { projectId: id },
+      include: { createdBy: { select: { email: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map(toArtifact);
+  });
+
+  app.post('/api/projects/:id/artifacts', async (req, rep) => {
+    const projectId = (req.params as { id: string }).id;
+    const owned = await requireProjectWrite(projectId, req.user!.id, rep);
+    if (!owned) return;
+
+    const parsed = artifactCreateSchema.safeParse(req.body);
+    if (!parsed.success) return rep.code(400).send(zodErrorPayload(parsed.error));
+    const { kind, title, url, notes } = parsed.data;
+
+    const row = await prisma.artifact
+      .create({
+        data: {
+          id: randomUUID(),
+          projectId,
+          kind,
+          title,
+          url: url ?? null,
+          notes: notes ?? null,
+          createdById: req.user!.id,
+        },
+        include: { createdBy: { select: { email: true } } },
+      })
+      .catch((err: unknown) => {
+        // Race: project deleted between the access check and insert -> P2003.
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === 'P2003'
+        ) {
+          return null;
+        }
+        throw err;
+      });
+    if (!row) return rep.code(400).send({ message: 'project not found' });
+
+    await touchProject(projectId);
+    await emitEvent(prisma, {
+      workspaceId: owned.project.workspaceId,
+      projectId,
+      userId: req.user!.id,
+      type: 'artifact.created',
+      payload: { id: row.id, title: row.title, kind: row.kind },
+    });
+    return rep.code(201).send(toArtifact(row));
+  });
+
+  app.put('/api/artifacts/:aId', async (req, rep) => {
+    const aId = (req.params as { aId: string }).aId;
+    const original = await prisma.artifact.findUnique({ where: { id: aId } });
+    if (!original) return rep.code(404).send({ message: 'Artifact not found' });
+    const owned = await requireProjectWrite(original.projectId, req.user!.id, rep);
+    if (!owned) return;
+
+    const parsed = artifactUpdateSchema.safeParse(req.body);
+    if (!parsed.success) return rep.code(400).send(zodErrorPayload(parsed.error));
+    const { kind, title, url, notes } = parsed.data;
+
+    const updated = await prisma.artifact
+      .update({
+        where: { id: aId },
+        data: {
+          ...(kind !== undefined ? { kind } : {}),
+          ...(title !== undefined ? { title } : {}),
+          ...(url !== undefined ? { url } : {}),
+          ...(notes !== undefined ? { notes } : {}),
+        },
+        include: { createdBy: { select: { email: true } } },
+      })
+      .catch((err: unknown) => {
+        // Race: deleted between findUnique and update -> P2025.
+        if (
+          err instanceof Prisma.PrismaClientKnownRequestError &&
+          err.code === 'P2025'
+        ) {
+          return null;
+        }
+        throw err;
+      });
+    if (!updated) return rep.code(404).send({ message: 'Artifact not found' });
+
+    await touchProject(original.projectId);
+    await emitEvent(prisma, {
+      workspaceId: owned.project.workspaceId,
+      projectId: original.projectId,
+      userId: req.user!.id,
+      type: 'artifact.updated',
+      payload: { id: updated.id, title: updated.title, kind: updated.kind },
+    });
+    return toArtifact(updated);
+  });
+
+  app.delete('/api/artifacts/:aId', async (req, rep) => {
+    const aId = (req.params as { aId: string }).aId;
+    const original = await prisma.artifact.findUnique({ where: { id: aId } });
+    if (!original) return rep.code(404).send({ message: 'Artifact not found' });
+    const owned = await requireProjectWrite(original.projectId, req.user!.id, rep);
+    if (!owned) return;
+    await prisma.artifact.delete({ where: { id: aId } });
+    await touchProject(original.projectId);
+    await emitEvent(prisma, {
+      workspaceId: owned.project.workspaceId,
+      projectId: original.projectId,
+      userId: req.user!.id,
+      type: 'artifact.deleted',
+      payload: { id: original.id, title: original.title, kind: original.kind },
+    });
+    return rep.code(204).send();
+  });
+
   // ---------------- Notes (quick capture / inbox) ----------------
 
   // Create a note. projectId is optional — null/undefined means "inbox".
   app.post('/api/notes', async (req, rep) => {
     const parsed = noteCreateSchema.safeParse(req.body);
     if (!parsed.success) return rep.code(400).send(zodErrorPayload(parsed.error));
-    const { workspaceId, projectId, body: rawBody, tags } = parsed.data;
+    const { workspaceId, projectId: rawProjectId, taskId, body: rawBody, tags } = parsed.data;
     const body = rawBody.trim();
     if (!body) return rep.code(400).send({ message: 'body cannot be empty' });
 
     const access = await assertWorkspaceAccess(prisma, workspaceId, req.user!.id);
     if (!access) return rep.code(404).send({ message: 'Not found' });
 
-    // If filing to a project, verify it lives in this workspace.
+    // Resolve the effective project. A task-linked note is always also a
+    // project note, so when taskId is given we derive/validate projectId from
+    // the task's project (and reject a conflicting explicit projectId).
     let projectName: string | null = null;
-    if (projectId) {
+    let projectId: string | null = rawProjectId ?? null;
+    if (taskId) {
+      const tk = await prisma.task.findUnique({
+        where: { id: taskId },
+        select: { projectId: true, project: { select: { workspaceId: true, name: true } } },
+      });
+      if (!tk || tk.project.workspaceId !== workspaceId) {
+        return rep.code(400).send({ message: 'invalidTask' });
+      }
+      if (projectId && projectId !== tk.projectId) {
+        return rep.code(400).send({ message: 'invalidTask' });
+      }
+      projectId = tk.projectId;
+      projectName = tk.project.name;
+    } else if (projectId) {
       const project = await prisma.project.findUnique({ where: { id: projectId } });
       if (!project || project.workspaceId !== workspaceId) {
         return rep.code(400).send({ message: 'project not in workspace' });
@@ -2495,6 +2675,7 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
           id: randomUUID(),
           workspaceId,
           projectId: projectId ?? null,
+          taskId: taskId ?? null,
           createdById: req.user!.id,
           body,
           tags: JSON.stringify(finalTags),
@@ -2592,7 +2773,7 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
 
     const parsed = noteUpdateSchema.safeParse(req.body);
     if (!parsed.success) return rep.code(400).send(zodErrorPayload(parsed.error));
-    const { body: rawBody, tags, projectId } = parsed.data;
+    const { body: rawBody, tags, projectId, taskId } = parsed.data;
 
     let nextProjectId: string | null = original.projectId;
     let projectName: string | null = null;
@@ -2607,6 +2788,25 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         nextProjectId = projectId;
         projectName = project.name;
       }
+    }
+
+    // Resolve the task link. null clears it; a string must belong to the note's
+    // resulting project. If the project moved out from under an existing link,
+    // drop the link to preserve the "task implies its project" invariant.
+    let nextTaskId: string | null = original.taskId;
+    if (taskId !== undefined) {
+      if (taskId === null) {
+        nextTaskId = null;
+      } else {
+        const check = await checkTask(prisma, taskId, nextProjectId);
+        if (check !== 'ok') {
+          return rep.code(400).send({ message: 'invalidTask' });
+        }
+        nextTaskId = taskId;
+      }
+    } else if (nextTaskId) {
+      const check = await checkTask(prisma, nextTaskId, nextProjectId);
+      if (check !== 'ok') nextTaskId = null;
     }
 
     const nextBody = rawBody !== undefined ? rawBody.trim() : original.body;
@@ -2627,6 +2827,7 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         body: nextBody,
         tags: nextTagsJson,
         projectId: nextProjectId,
+        taskId: nextTaskId,
       },
       include: { createdBy: { select: { email: true } } },
     });

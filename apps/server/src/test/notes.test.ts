@@ -5,6 +5,7 @@ interface Note {
   id: string;
   workspaceId: string;
   projectId: string | null;
+  taskId: string | null;
   createdById: string;
   body: string;
   tags: string[];
@@ -264,5 +265,79 @@ describe('notes — Phase C quick-capture + inbox', () => {
       headers: cookieHeader(demoSid),
     });
     expect(del.statusCode).toBe(204);
+  });
+
+  // ---- Note↔Task linkage (taskId) ----
+
+  it('POST note with valid taskId links it and derives the project', async () => {
+    const res = await ctx.app.inject({
+      method: 'POST', url: '/api/notes',
+      headers: { ...cookieHeader(demoSid), 'content-type': 'application/json' },
+      payload: { workspaceId: 'ws-demo', taskId: 't1', body: 'context for t1' },
+    });
+    expect(res.statusCode).toBe(201);
+    const note = asJson<Note>(res);
+    expect(note.taskId).toBe('t1');
+    expect(note.projectId).toBe('p1'); // derived from the task's project
+  });
+
+  it('POST note with taskId from another project is rejected (400)', async () => {
+    // Find a task that lives in p2 (not p1).
+    const tasksRes = await ctx.app.inject({
+      method: 'GET', url: '/api/projects/p2/tasks', headers: cookieHeader(demoSid),
+    });
+    const p2tasks = asJson<Array<{ id: string }>>(tasksRes);
+    const foreignTaskId = p2tasks[0]?.id;
+    expect(foreignTaskId).toBeTruthy();
+    const res = await ctx.app.inject({
+      method: 'POST', url: '/api/notes',
+      headers: { ...cookieHeader(demoSid), 'content-type': 'application/json' },
+      // explicit projectId p1 conflicts with the p2 task → invalidTask
+      payload: { workspaceId: 'ws-demo', projectId: 'p1', taskId: foreignTaskId, body: 'mismatch' },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('project notes can be filtered to a task client-side (taskId present)', async () => {
+    const create = await ctx.app.inject({
+      method: 'POST', url: '/api/notes',
+      headers: { ...cookieHeader(demoSid), 'content-type': 'application/json' },
+      payload: { workspaceId: 'ws-demo', taskId: 't2', body: 'note for t2' },
+    });
+    const note = asJson<Note>(create);
+    const list = await ctx.app.inject({
+      method: 'GET', url: '/api/projects/p1/notes', headers: cookieHeader(demoSid),
+    });
+    const notes = asJson<Note[]>(list);
+    const forT2 = notes.filter((n) => n.taskId === 't2');
+    expect(forT2.some((n) => n.id === note.id)).toBe(true);
+  });
+
+  it('deleting a task SetNulls the linked note taskId (note survives)', async () => {
+    // Make a throwaway task in p1 so we don't disturb the seed graph.
+    const tk = await ctx.app.inject({
+      method: 'POST', url: '/api/projects/p1/tasks',
+      headers: { ...cookieHeader(demoSid), 'content-type': 'application/json' },
+      payload: { title: 'temp link target', type: 'thinking', status: 'todo', size: 'm' },
+    });
+    const task = asJson<{ id: string }>(tk);
+    const create = await ctx.app.inject({
+      method: 'POST', url: '/api/notes',
+      headers: { ...cookieHeader(demoSid), 'content-type': 'application/json' },
+      payload: { workspaceId: 'ws-demo', taskId: task.id, body: 'survives task delete' },
+    });
+    const note = asJson<Note>(create);
+    expect(note.taskId).toBe(task.id);
+    const del = await ctx.app.inject({
+      method: 'DELETE', url: `/api/tasks/${task.id}`, headers: cookieHeader(demoSid),
+    });
+    expect([200, 204]).toContain(del.statusCode);
+    // The note is still in the project feed, now with taskId null.
+    const list = await ctx.app.inject({
+      method: 'GET', url: '/api/projects/p1/notes', headers: cookieHeader(demoSid),
+    });
+    const found = asJson<Note[]>(list).find((n) => n.id === note.id);
+    expect(found).toBeDefined();
+    expect(found!.taskId).toBeNull();
   });
 });

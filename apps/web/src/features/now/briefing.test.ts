@@ -29,6 +29,7 @@ function mkNote(overrides: Partial<Note> = {}): Note {
     id: 'n1',
     workspaceId: 'w1',
     projectId: 'p1',
+    taskId: null,
     createdById: 'u1',
     createdByEmail: 'u@x',
     body: 'thought',

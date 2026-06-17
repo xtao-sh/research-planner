@@ -203,7 +203,8 @@ export type EventType =
   | 'workspace.member.role_changed' | 'workspace.owner.transferred'
   | 'workspace.calendar.updated' | 'workspace.holiday.added' | 'workspace.holiday.removed'
   | 'workspace.invite.created' | 'workspace.invite.revoked' | 'workspace.invite.accepted'
-  | 'note.created' | 'note.updated';
+  | 'note.created' | 'note.updated'
+  | 'artifact.created' | 'artifact.updated' | 'artifact.deleted';
 
 // Persistent quick-capture / inbox notes (Phase C).
 // projectId === null means the note is in the author's inbox.
@@ -211,10 +212,29 @@ export interface Note {
   id: ID;
   workspaceId: ID;
   projectId: ID | null;
+  taskId: ID | null;
   createdById: ID;
   createdByEmail: string | null;
   body: string;
   tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Project artifacts (the 4th project tab). A minimal, typed attachment record
+// — a link / file / code / data / note produced or referenced by the project.
+// (Distinct from the task-level `ArtifactLink` above.)
+export type ArtifactKind = 'link' | 'file' | 'code' | 'data' | 'note';
+
+export interface Artifact {
+  id: ID;
+  projectId: ID;
+  kind: ArtifactKind;
+  title: string;
+  url: string | null;
+  notes: string | null;
+  createdById: ID;
+  createdByEmail: string | null;
   createdAt: string;
   updatedAt: string;
 }

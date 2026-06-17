@@ -183,6 +183,9 @@ export const EVENT_ICON: Record<EventType, string> = {
   'workspace.invite.accepted': '🎉',
   'note.created': '📝',
   'note.updated': '📝',
+  'artifact.created': '🗂️',
+  'artifact.updated': '🗂️',
+  'artifact.deleted': '🗑️',
 };
 
 // Map event types to the i18n key + which payload fields to interpolate.
@@ -213,6 +216,9 @@ export const EVENT_I18N_KEY: Record<EventType, string> = {
   'workspace.invite.accepted': 'event.inviteAccepted',
   'note.created': 'event.noteCreated',
   'note.updated': 'event.noteFiled',
+  'artifact.created': 'event.artifactCreated',
+  'artifact.updated': 'event.artifactUpdated',
+  'artifact.deleted': 'event.artifactDeleted',
 };
 
 export function eventPayloadValues(payload: unknown): Record<string, string | number> {

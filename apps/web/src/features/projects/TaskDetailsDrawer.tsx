@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Dependency, Milestone, Task, TimeframeBucket } from '@rp/shared';
+import type { Dependency, Milestone, Note, Task, TimeframeBucket } from '@rp/shared';
 import {
   TaskFormState,
   typeOptions,
@@ -9,6 +9,7 @@ import {
 } from '../task-form/form';
 import { TimeframeChipGroup } from '../tasks/TimeframeChipGroup';
 import { computeTimeframeStatus } from '../tasks/timeframe';
+import { renderBodyWithHashtags } from './ProjectNotesTab';
 
 interface TaskDetailsDrawerProps {
   open: boolean;
@@ -38,6 +39,8 @@ interface TaskDetailsDrawerProps {
    *  explicit-save pattern via onSave — this is only invoked for actions
    *  that are themselves the commitment ("reset the bucket clock"). */
   onApplyPatch?: (taskId: string, patch: Partial<Task>) => void;
+  /** Project notes for the current project; the strip filters them by task. */
+  projectNotes?: Note[];
 }
 
 /**
@@ -72,8 +75,13 @@ export function TaskDetailsDrawer({
   onAddDependency,
   onRemoveDependency,
   onApplyPatch,
+  projectNotes = [],
 }: TaskDetailsDrawerProps) {
   const { t } = useTranslation();
+  // Notes captured against this specific task (re-entry context).
+  const taskNotes = selectedTask
+    ? projectNotes.filter((n) => n.taskId === selectedTask.id)
+    : [];
   const trapRef = useRef<HTMLDivElement>(null);
 
   // ESC closes the modal.
@@ -267,6 +275,38 @@ export function TaskDetailsDrawer({
                 onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               />
             </div>
+
+            {selectedTask && (
+              <div className="form-group">
+                <label>{t('task.notesStrip.title')}</label>
+                {taskNotes.length === 0 ? (
+                  <p className="muted" style={{ margin: '2px 0 6px', fontSize: 12 }}>
+                    {t('task.notesStrip.empty')}
+                  </p>
+                ) : (
+                  <div className="rd-note-list" style={{ marginBottom: 6 }}>
+                    {taskNotes.map((note) => (
+                      <div key={note.id} className="rd-note">
+                        <div className="rd-body">{renderBodyWithHashtags(note.body)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="rd-btn rd-btn-ghost rd-btn-sm"
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new CustomEvent('rp:open-capture', {
+                        detail: { taskId: selectedTask.id },
+                      }),
+                    )
+                  }
+                >
+                  + {t('task.notesStrip.add')}
+                </button>
+              </div>
+            )}
           </section>
 
           {/* === ADDITIONAL FIELDS === */}

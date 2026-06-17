@@ -26,6 +26,7 @@ import {
   summarizeStuck,
   sumDoingIntensity,
 } from './briefing';
+import { DailyCheckIn } from './DailyCheckIn';
 
 interface TaskWithProject {
   task: Task;
@@ -292,6 +293,16 @@ export function NowPage() {
                 })}
           </div>
         </div>
+
+        <DailyCheckIn
+          allTasks={allTasks.map((x) => x.task)}
+          focused={focusedTasks.map((x) => x.task)}
+          blocked={blockedTasks.map((x) => x.task)}
+          onUnblock={(taskId) =>
+            void handleApplyPatch(taskId, { status: nextStatus('blocked') })
+          }
+          onPinPrompt={() => navigate('/projects')}
+        />
 
         {briefingProject && (
           <NowBriefingCard

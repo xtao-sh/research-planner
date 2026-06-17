@@ -21,6 +21,12 @@ import {
   EVENT_I18N_KEY,
   eventPayloadValues,
 } from '../activity/ActivityPanel';
+import {
+  summarizeMovement,
+  summarizeStuck,
+  resolveLastVisitMs,
+  briefingLastSeenKey,
+} from '../now/briefing';
 
 const DAY_MS = 86_400_000;
 const STALE_THRESHOLD_DAYS = 3;
@@ -128,6 +134,22 @@ export function ProjectBriefing({ project, tasks, notes }: ProjectBriefingProps)
     [tasks]
   );
 
+  // Movement "since last visit" — shares the last-seen stamp with /now so the
+  // two surfaces tell a consistent re-entry story. Stamp this visit so the
+  // next re-entry is measured from here.
+  const lastVisitMs = useMemo(
+    () => resolveLastVisitMs(project.id, project.updatedAt, 14),
+    [project.id, project.updatedAt]
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(briefingLastSeenKey(project.id), String(Date.now()));
+    } catch {
+      /* ignore */
+    }
+  }, [project.id]);
+
   const counts: Counts = useMemo(
     () => ({
       doing: tasks.filter((tk) => tk.status === 'doing').length,
@@ -174,9 +196,50 @@ export function ProjectBriefing({ project, tasks, notes }: ProjectBriefingProps)
   // Adopt the redesign's warm gradient briefing — eyebrow + headline +
   // 3-cell context grid (last activity / loose end / open thought) +
   // action row.
-  const looseEndText = counts.blocked > 0
-    ? (t as TFn)('briefing.looseEndBlocked', { count: counts.blocked })
-    : null;
+  // Movement since last visit (same derivation as /now's briefing).
+  const movement = summarizeMovement(tasks, lastVisitMs);
+  const movementLines: string[] = [];
+  if (movement) {
+    const { toDoing, toDone, toBlocked } = movement;
+    const moveCount =
+      (toDoing > 0 ? 1 : 0) + (toDone > 0 ? 1 : 0) + (toBlocked > 0 ? 1 : 0);
+    if (moveCount >= 2) {
+      movementLines.push(
+        (t as TFn)('now.briefing.movedSummary', { toDoing, toDone, toBlocked })
+      );
+    } else if (toDoing > 0) {
+      movementLines.push((t as TFn)('now.briefing.movedDoingOnly', { n: toDoing }));
+    } else if (toDone > 0) {
+      movementLines.push((t as TFn)('now.briefing.movedDoneOnly', { n: toDone }));
+    } else if (toBlocked > 0) {
+      movementLines.push((t as TFn)('now.briefing.movedBlockedOnly', { n: toBlocked }));
+    }
+    if (movement.lastShippedTitle) {
+      movementLines.push(
+        (t as TFn)('now.briefing.lastShipped', { title: movement.lastShippedTitle })
+      );
+    }
+  }
+  const movementText = movementLines.length > 0 ? movementLines.join(' · ') : null;
+
+  // Stuck — doing >7d or blocked. Richer than a raw blocked count: it also
+  // catches tasks that have been "in progress" for over a week.
+  const stuck = summarizeStuck(tasks);
+  const stuckText = (() => {
+    if (!stuck) return null;
+    if (stuck.loneTitle) return (t as TFn)('now.briefing.stuckLone', { title: stuck.loneTitle });
+    if (stuck.doingStuckCount > 0 && stuck.blockedCount > 0) {
+      return (t as TFn)('now.briefing.stuckBoth', {
+        doing: stuck.doingStuckCount,
+        blocked: stuck.blockedCount,
+      });
+    }
+    if (stuck.doingStuckCount > 0) {
+      return (t as TFn)('now.briefing.stuckDoingOnly', { n: stuck.doingStuckCount });
+    }
+    return (t as TFn)('now.briefing.stuckBlockedOnly', { n: stuck.blockedCount });
+  })();
+
   const lastActivityText = recentEvents.length > 0
     ? activitySentence(t as TFn, recentEvents[0]).sentence
     : null;
@@ -217,16 +280,22 @@ export function ProjectBriefing({ project, tasks, notes }: ProjectBriefingProps)
           {(t as TFn)('briefing.lastTouched', { when: lastTouchedText })}
         </h2>
         <div className="rd-briefing-grid">
+          {movementText && (
+            <div className="rd-briefing-cell">
+              <div className="rd-lbl">{(t as TFn)('now.briefing.sinceLastVisit')}</div>
+              <div className="rd-val">{movementText}</div>
+            </div>
+          )}
           {lastActivityText && (
             <div className="rd-briefing-cell">
               <div className="rd-lbl">{(t as TFn)('briefing.recentActivity')}</div>
               <div className="rd-val">{lastActivityText}</div>
             </div>
           )}
-          {looseEndText && (
+          {stuckText && (
             <div className="rd-briefing-cell">
-              <div className="rd-lbl">{(t as TFn)('briefing.looseEnd')}</div>
-              <div className="rd-val">{looseEndText}</div>
+              <div className="rd-lbl">{(t as TFn)('now.briefing.stuck')}</div>
+              <div className="rd-val">{stuckText}</div>
             </div>
           )}
           {openThoughtText && (

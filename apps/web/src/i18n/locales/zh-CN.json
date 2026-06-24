@@ -868,6 +868,13 @@
     }
   },
   "inbox": {
+  "needProjectHint": "请先创建一个项目",
+  "noMatchingTag": "没有带 #{{tag}} 标签的速记",
+  "undo": "撤销",
+  "deleteSuccess": "已删除速记",
+  "showLess": "收起",
+  "showMore": "展开",
+  "edit": "编辑",
     "emptyTitle": "收件箱空",
     "emptySubtitle": "按 ⌘⇧N（或点击 + 速记）记下一个想法到这里。",
     "quickCapture": "速记",

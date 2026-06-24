@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppData } from '../../contexts/AppDataContext';
 import { createNote } from '../../api/notes';
 import { getProjectTypeMeta } from '../projects/projectTypes';
+import { useToast } from '../../components/Toast';
 
 interface QuickCaptureModalProps {
   open: boolean;
@@ -28,6 +29,7 @@ export function QuickCaptureModal({
   onSaved,
 }: QuickCaptureModalProps) {
   const { t } = useTranslation();
+  const toast = useToast();
   const {
     activeWorkspaceId,
     projects,
@@ -185,17 +187,20 @@ export function QuickCaptureModal({
       const msg = projName
         ? t('capture.savedToProject', { project: projName })
         : t('capture.savedToInbox');
-      setFeedback(msg);
       onSaved?.(note.projectId);
 
       if (openAnother) {
-        // Reset for next entry but keep the modal open.
+        // Stay open for rapid capture — keep the inline acknowledgment
+        // visible since there's no modal-close to swallow it.
+        setFeedback(msg);
         setBody('');
         setTagsRaw('');
         scheduleTimeout(() => textareaRef.current?.focus(), 0);
       } else {
-        // Auto-close after a brief acknowledgment.
-        scheduleTimeout(() => onClose(), 250);
+        // Fire a global toast (survives the close, stays readable) instead
+        // of an in-modal flash that the 250ms close made unreadable.
+        toast.push(msg, { kind: 'success' });
+        onClose();
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : t('capture.errorSave'));
@@ -369,6 +374,20 @@ export function QuickCaptureModal({
             onClick={onClose}
           >
             {t('common.close')}
+          </button>
+          <button
+            type="button"
+            className="rd-btn rd-btn-sm"
+            onClick={() => save(true)}
+            disabled={!canSave}
+          >
+            {t('capture.saveAndAnother')}
+            <kbd
+              className="mono"
+              style={{ marginLeft: 6, fontSize: 10, opacity: 0.7 }}
+            >
+              ⌘⇧↵
+            </kbd>
           </button>
           <button
             type="button"

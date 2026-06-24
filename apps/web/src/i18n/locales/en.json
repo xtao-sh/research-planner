@@ -868,6 +868,13 @@
     }
   },
   "inbox": {
+  "needProjectHint": "Create a project first",
+  "noMatchingTag": "No captures tagged #{{tag}}",
+  "undo": "Undo",
+  "deleteSuccess": "Capture deleted",
+  "showLess": "Show less",
+  "showMore": "Show more",
+  "edit": "Edit",
     "emptyTitle": "Inbox is empty",
     "emptySubtitle": "Press ⌘⇧N (or click + Capture) to drop an idea here.",
     "quickCapture": "Quick capture",

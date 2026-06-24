@@ -298,7 +298,10 @@ export function TaskDetailsDrawer({
                   onClick={() =>
                     window.dispatchEvent(
                       new CustomEvent('rp:open-capture', {
-                        detail: { taskId: selectedTask.id },
+                        detail: {
+                          taskId: selectedTask.id,
+                          projectId: selectedTask.projectId,
+                        },
                       }),
                     )
                   }

@@ -46,6 +46,10 @@ export function AppLayout() {
 
   const [showCapture, setShowCapture] = useState(false);
   const [captureTaskId, setCaptureTaskId] = useState<string | null>(null);
+  // A projectId carried alongside an rp:open-capture event (e.g. from the
+  // task drawer's 'capture into this task'). Takes precedence over the
+  // URL-derived default so the linkage survives non-/projects/:id routes.
+  const [captureProjectId, setCaptureProjectId] = useState<string | null>(null);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
@@ -160,8 +164,11 @@ export function AppLayout() {
   React.useEffect(() => {
     const newProj = () => openNewProject();
     const openCap = (e: Event) => {
-      const detail = (e as CustomEvent<{ taskId?: string | null }>).detail;
+      const detail = (
+        e as CustomEvent<{ taskId?: string | null; projectId?: string | null }>
+      ).detail;
       setCaptureTaskId(detail?.taskId ?? null);
+      setCaptureProjectId(detail?.projectId ?? null);
       setShowCapture(true);
     };
     window.addEventListener('rp:new-project', newProj);
@@ -458,11 +465,12 @@ export function AppLayout() {
 
       <QuickCaptureModal
         open={showCapture}
-        defaultProjectId={captureDefaultProjectId}
+        defaultProjectId={captureProjectId ?? captureDefaultProjectId}
         defaultTaskId={captureTaskId}
         onClose={() => {
           setShowCapture(false);
           setCaptureTaskId(null);
+          setCaptureProjectId(null);
         }}
       />
 

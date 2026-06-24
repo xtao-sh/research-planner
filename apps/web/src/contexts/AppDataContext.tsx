@@ -184,7 +184,16 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           if (activeWorkspaceIdRef.current !== wsAtStart) return;
           setProjectTasks((prev) => ({ ...prev, [pid]: ts }));
         } catch {
-          // ignore individual project failures / aborts
+          // On per-project failure (network blip, 500, abort) write an
+          // empty sentinel so `allProjectsCached` can still resolve —
+          // otherwise the slot stays `undefined` forever and any consumer
+          // gated on "every project fetched" (e.g. /now's loadingSummary)
+          // sticks in a permanent loading state. Don't clobber an existing
+          // cache, and respect the workspace-switch guard.
+          if (activeWorkspaceIdRef.current !== wsAtStart) return;
+          setProjectTasks((prev) =>
+            prev[pid] !== undefined ? prev : { ...prev, [pid]: [] }
+          );
         }
       })
     );

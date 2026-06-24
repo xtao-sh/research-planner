@@ -481,6 +481,10 @@ export function ProjectDetailPage() {
       await sendJson(`/api/tasks/${taskId}`, { method: 'DELETE' });
       if (selectedTaskId === taskId) {
         setSelectedTaskId(null);
+        // Also close the drawer — otherwise it lingers open with
+        // selectedTask=null, flipping to the 'New task' editor with a live
+        // Save button that would POST a brand-new task.
+        setShowDetailsDrawer(false);
       }
       await refreshProject();
     } catch (e: any) {

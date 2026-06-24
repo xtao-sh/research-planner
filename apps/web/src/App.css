@@ -4855,6 +4855,17 @@ h4 {
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
 }
+/* "Unsaved changes" cue for the drawer's staged-save model (#61). */
+.task-drawer-dirty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--rd-text-xs);
+  font-weight: 600;
+  color: var(--rd-st-blocked);
+  white-space: nowrap;
+  margin-right: 4px;
+}
 .tag-readonly {
   display: inline-block;
   padding: 0.15rem 0.55rem;
@@ -5055,6 +5066,16 @@ h4 {
   --rd-ink-3:  oklch(0.50 0.01 85);
   --rd-ink-4:  oklch(0.72 0.01 85);
 
+  /* Type scale (redesign). The --rd-* surfaces are denser than the legacy
+     --fs-* ramp (12/14/16…), so they carry their own named steps instead of
+     scattering raw fractional px. Single source of truth for redesign font
+     sizes — change a step here, not in 25 rules. */
+  --rd-text-2xs: 10.5px;
+  --rd-text-xs:  11.5px;
+  --rd-text-sm:  12.5px;
+  --rd-text-md:  13.5px;
+  --rd-text-lg:  14.5px;
+
   /* Status palette — uniform chroma with rotating hue. Slightly more
      saturated than the existing hex set, plus matching tints. */
   --rd-st-todo:    oklch(0.55 0.01 85);
@@ -5246,7 +5267,7 @@ body {
   gap: 1px;
 }
 .rd-nav-group-label {
-  font-size: 10.5px;
+  font-size: var(--rd-text-2xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--rd-ink-3);
@@ -5396,7 +5417,7 @@ body {
 }
 .rd-section-sub {
   color: var(--rd-ink-3);
-  font-size: 13.5px;
+  font-size: var(--rd-text-md);
   line-height: 1.5;
   margin: 0 0 18px;
 }
@@ -5534,7 +5555,7 @@ body {
 .rd-task-row .rd-pin.on { color: var(--focus); }
 .rd-task-row .rd-title {
   font-weight: 500;
-  font-size: 13.5px;
+  font-size: var(--rd-text-md);
   letter-spacing: -0.005em;
   line-height: 1.4;
   color: var(--rd-ink);
@@ -5544,7 +5565,7 @@ body {
   gap: 10px;
   align-items: center;
   margin-top: 3px;
-  font-size: 11.5px;
+  font-size: var(--rd-text-xs);
   color: var(--rd-ink-3);
   flex-wrap: wrap;
 }
@@ -5580,7 +5601,7 @@ body {
   gap: 6px;
   padding: 3px 9px 3px 8px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: var(--rd-text-xs);
   font-weight: 600;
   letter-spacing: -0.005em;
   background: var(--rd-bg-sunk);
@@ -5817,14 +5838,14 @@ body {
   margin-bottom: 10px;
 }
 .rd-proj-card-head .rd-name {
-  font-size: 14.5px;
+  font-size: var(--rd-text-lg);
   font-weight: 600;
   letter-spacing: -0.011em;
   flex: 1;
   color: var(--rd-ink);
 }
 .rd-proj-card-head .rd-type-chip {
-  font-size: 10.5px;
+  font-size: var(--rd-text-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -5834,7 +5855,7 @@ body {
   border-radius: 4px;
 }
 .rd-proj-card-desc {
-  font-size: 12.5px;
+  font-size: var(--rd-text-sm);
   color: var(--rd-ink-3);
   margin-bottom: 14px;
   line-height: 1.5;
@@ -5875,7 +5896,7 @@ body {
   align-items: center;
   gap: 8px;
   margin-top: 10px;
-  font-size: 11.5px;
+  font-size: var(--rd-text-xs);
   color: var(--rd-ink-3);
   flex-wrap: wrap;
 }
@@ -5918,7 +5939,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
-  font-size: 13.5px;
+  font-size: var(--rd-text-md);
   font-weight: 500;
   color: var(--rd-ink-3);
   border-bottom: 2px solid transparent;
@@ -5979,7 +6000,7 @@ body {
   height: 22px;
   padding: 0 8px;
   border-radius: 5px;
-  font-size: 10.5px;
+  font-size: var(--rd-text-2xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -6094,7 +6115,7 @@ body {
   border: 1px solid var(--rd-briefing-cell-border, oklch(0.92 0.02 75));
 }
 .rd-briefing-cell .rd-lbl {
-  font-size: 10.5px;
+  font-size: var(--rd-text-2xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--rd-ink-3);
@@ -6336,7 +6357,7 @@ button.rd-briefing-cell:active {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 10.5px;
+  font-size: var(--rd-text-2xs);
   font-weight: 600;
   line-height: 1;
   padding: 2px 6px;
@@ -6419,7 +6440,7 @@ button.rd-briefing-cell:active {
   bottom: 0;
   border-left: 1px dashed oklch(0.88 0.01 85);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--rd-text-2xs);
   color: var(--rd-ink-3);
   padding: 11px 0 0 6px;
   white-space: nowrap;
@@ -6601,7 +6622,7 @@ button.rd-briefing-cell:active {
   background: var(--rd-bg-sunk);
   border: 1px solid var(--rd-line);
   border-radius: 8px;
-  font-size: 11.5px;
+  font-size: var(--rd-text-xs);
   color: var(--rd-ink-2);
 }
 .rd-unc-key .rd-demo {
@@ -6670,7 +6691,7 @@ button.rd-briefing-cell:active {
 .rd-capture-head .rd-kbd {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--rd-text-2xs);
   color: var(--rd-ink-3);
   padding: 2px 6px;
   border: 1px solid var(--rd-line);
@@ -6800,7 +6821,7 @@ button.rd-briefing-cell:active {
 }
 .rd-note .rd-stamp .rd-grow { flex: 1; }
 .rd-note .rd-body {
-  font-size: 13.5px;
+  font-size: var(--rd-text-md);
   line-height: 1.55;
   color: var(--rd-ink);
   white-space: pre-wrap;
@@ -6862,7 +6883,7 @@ button.rd-briefing-cell:active {
   min-width: 64px;
 }
 .rd-inbox-row .rd-body {
-  font-size: 13.5px;
+  font-size: var(--rd-text-md);
   color: var(--rd-ink);
   white-space: pre-wrap;
   word-break: break-word;
@@ -6902,7 +6923,7 @@ button.rd-briefing-cell:active {
   display: flex;
   gap: 16px;
   align-items: center;
-  font-size: 11.5px;
+  font-size: var(--rd-text-xs);
   color: var(--rd-ink-2);
   padding: 8px 14px;
   background: var(--rd-bg-sunk);
@@ -6953,7 +6974,7 @@ button.rd-briefing-cell:active {
   color: var(--rd-ink-3);
 }
 .rd-tree-title {
-  font-size: 13.5px;
+  font-size: var(--rd-text-md);
   font-weight: 500;
   color: var(--rd-ink);
   display: flex;
@@ -6986,7 +7007,7 @@ button.rd-briefing-cell:active {
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: 10.5px;
+  font-size: var(--rd-text-2xs);
   flex-shrink: 0;
 }
 .rd-branch-bar-track {
@@ -7192,7 +7213,7 @@ button.rd-briefing-cell:active {
   padding: 28px 18px;
   text-align: center;
   color: var(--rd-ink-3);
-  font-size: 13.5px;
+  font-size: var(--rd-text-md);
   line-height: 1.5;
   border: 1px dashed var(--rd-line);
   border-radius: var(--rd-radius-card);
@@ -7409,7 +7430,7 @@ button.rd-briefing-cell:active {
   align-items: center;
   gap: 10px;
   box-shadow: var(--rd-shadow-3);
-  font-size: 13.5px;
+  font-size: var(--rd-text-md);
   pointer-events: auto;
   animation: rd-toast-in 180ms ease-out;
 }
@@ -7549,7 +7570,7 @@ button.rd-briefing-cell:active {
 }
 .rd-tf-badge.is-past { color: var(--rd-st-blocked); }
 .rd-tf-countdown {
-  font-size: 11.5px;
+  font-size: var(--rd-text-xs);
   color: var(--rd-ink-3);
   font-variant-numeric: tabular-nums;
 }
@@ -7585,7 +7606,7 @@ button.rd-briefing-cell:active {
     margin-top: 6px;
     border-top: 1px solid var(--rd-line);
     border-bottom: 1px solid var(--rd-line);
-    font-size: 12.5px;
+    font-size: var(--rd-text-sm);
     color: var(--rd-ink-2);
     position: relative;
   }

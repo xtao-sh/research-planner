@@ -254,6 +254,9 @@
       "moreDetails": "More details"
     },
     "drawer": {
+      "unsaved": "Unsaved changes",
+      "discardConfirm": "Discard your unsaved changes?",
+      "discardCta": "Discard",
       "title": "More details",
       "close": "Close"
     },

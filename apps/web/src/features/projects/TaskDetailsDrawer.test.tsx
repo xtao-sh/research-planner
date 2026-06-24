@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
 import i18n from 'i18next';
 import { TaskDetailsDrawer } from './TaskDetailsDrawer';
+import { ConfirmProvider } from '../../components/ConfirmDialog';
 import { defaultForm } from '../task-form/form';
 
 const testI18n = i18n.createInstance();
@@ -36,7 +37,11 @@ testI18n.use(initReactI18next).init({
 });
 
 function withI18n(ui: React.ReactNode) {
-  return <I18nextProvider i18n={testI18n}>{ui}</I18nextProvider>;
+  return (
+    <I18nextProvider i18n={testI18n}>
+      <ConfirmProvider>{ui}</ConfirmProvider>
+    </I18nextProvider>
+  );
 }
 
 function defaultProps(overrides: Partial<React.ComponentProps<typeof TaskDetailsDrawer>> = {}) {

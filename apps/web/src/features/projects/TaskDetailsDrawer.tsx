@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Dependency, Milestone, Note, Task, TimeframeBucket } from '@rp/shared';
 import {
@@ -11,6 +11,7 @@ import { TimeframeChipGroup } from '../tasks/TimeframeChipGroup';
 import { computeTimeframeStatus } from '../tasks/timeframe';
 import { formatRelative } from '../../utils/time';
 import { renderBodyWithHashtags } from './ProjectNotesTab';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface TaskDetailsDrawerProps {
   open: boolean;
@@ -84,6 +85,48 @@ export function TaskDetailsDrawer({
     ? projectNotes.filter((n) => n.taskId === selectedTask.id)
     : [];
   const trapRef = useRef<HTMLDivElement>(null);
+  const confirm = useConfirm();
+
+  // Dirty tracking for the drawer's mixed staged-save model (most fields stage
+  // until Save; the timeframe re-anchor auto-commits). Snapshot the form when
+  // the drawer opens for a task, flag pending edits, and confirm before
+  // discarding them on an implicit close (backdrop / Cancel / ✕).
+  // Snapshot the form as the "clean" baseline once it has settled for this
+  // task. The parent populates the form in a [selectedTaskId] effect that runs
+  // AFTER this child mounts, so we defer the snapshot one tick (reading the
+  // latest form via a ref) to avoid a false-dirty flash on open.
+  const formRef = useRef(form);
+  formRef.current = form;
+  const [baseline, setBaseline] = useState<TaskFormState | null>(null);
+  useEffect(() => {
+    if (!open) {
+      setBaseline(null);
+      return;
+    }
+    const id = window.setTimeout(() => setBaseline(formRef.current), 0);
+    return () => window.clearTimeout(id);
+    // Re-snapshot when the drawer opens or switches to a different task.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, selectedTask?.id]);
+  const isDirty =
+    open &&
+    baseline !== null &&
+    JSON.stringify(form) !== JSON.stringify(baseline);
+  const closingRef = useRef(false);
+  async function requestClose() {
+    if (closingRef.current) return;
+    if (isDirty) {
+      closingRef.current = true;
+      const ok = await confirm({
+        message: t('task.drawer.discardConfirm'),
+        confirmLabel: t('task.drawer.discardCta'),
+        tone: 'danger',
+      });
+      closingRef.current = false;
+      if (!ok) return;
+    }
+    onClose();
+  }
 
   // ESC closes the modal.
   useEffect(() => {
@@ -149,7 +192,7 @@ export function TaskDetailsDrawer({
     <>
       <div
         className="task-modal-backdrop"
-        onClick={onClose}
+        onClick={() => void requestClose()}
         aria-hidden="true"
       />
       <div
@@ -168,7 +211,7 @@ export function TaskDetailsDrawer({
           </h3>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => void requestClose()}
             className="task-drawer-close"
             aria-label={t('task.drawer.close')}
           >
@@ -621,10 +664,15 @@ export function TaskDetailsDrawer({
               {t('task.inlineEditor.delete')}
             </button>
           )}
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            {isDirty && (
+              <span className="task-drawer-dirty" title={t('task.drawer.unsaved')}>
+                ● {t('task.drawer.unsaved')}
+              </span>
+            )}
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => void requestClose()}
               className="btn-inline-cancel"
             >
               {t('task.inlineEditor.cancel')}

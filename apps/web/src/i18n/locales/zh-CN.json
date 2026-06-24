@@ -254,6 +254,9 @@
       "moreDetails": "更多详情"
     },
     "drawer": {
+      "unsaved": "未保存的更改",
+      "discardConfirm": "放弃未保存的更改？",
+      "discardCta": "放弃",
       "title": "详细设置",
       "close": "关闭"
     },

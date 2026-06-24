@@ -9,6 +9,7 @@ import {
 } from '../task-form/form';
 import { TimeframeChipGroup } from '../tasks/TimeframeChipGroup';
 import { computeTimeframeStatus } from '../tasks/timeframe';
+import { formatRelative } from '../../utils/time';
 import { renderBodyWithHashtags } from './ProjectNotesTab';
 
 interface TaskDetailsDrawerProps {
@@ -285,11 +286,23 @@ export function TaskDetailsDrawer({
                   </p>
                 ) : (
                   <div className="rd-note-list" style={{ marginBottom: 6 }}>
-                    {taskNotes.map((note) => (
-                      <div key={note.id} className="rd-note">
-                        <div className="rd-body">{renderBodyWithHashtags(note.body)}</div>
-                      </div>
-                    ))}
+                    {taskNotes.map((note) => {
+                      const r = formatRelative(note.createdAt);
+                      const when = t(r.key, r.values ?? {});
+                      const author = note.createdByEmail
+                        ? t('project.notesAuthor', { email: note.createdByEmail })
+                        : '';
+                      return (
+                        <div key={note.id} className="rd-note">
+                          <div className="rd-stamp">
+                            <span aria-hidden>📝</span>
+                            <span>{when}</span>
+                            {author && <span>· {author}</span>}
+                          </div>
+                          <div className="rd-body">{renderBodyWithHashtags(note.body)}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 <button

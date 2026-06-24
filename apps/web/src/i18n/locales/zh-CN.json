@@ -510,6 +510,7 @@
     "viewer": "查看者"
   },
   "artifact": {
+    "editTitle": "编辑产出",
     "deleteConfirm": "确定删除该产出？此操作无法撤销。",
     "loadError": "加载产出失败",
     "panel": "附件管理",

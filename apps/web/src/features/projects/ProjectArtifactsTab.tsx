@@ -6,8 +6,10 @@ import {
   createArtifact,
   deleteArtifact,
   getProjectArtifacts,
+  updateArtifact,
 } from '../../api/artifacts';
 import { formatRelative } from '../../utils/time';
+import { useToast } from '../../components/Toast';
 import { SkeletonList } from '../../components/Skeleton';
 
 interface ProjectArtifactsTabProps {
@@ -44,6 +46,7 @@ export function ProjectArtifactsTab({
 }: ProjectArtifactsTabProps) {
   const { t } = useTranslation();
   const { auth } = useAppData();
+  const toast = useToast();
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,12 +54,21 @@ export function ProjectArtifactsTab({
   const [activeKind, setActiveKind] = useState<ArtifactKind | 'all'>('all');
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Which row (if any) is in inline-edit mode. Mutually exclusive with the
+  // add form so the two free-text editors never compete for the screen.
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Add-form state.
   const [formKind, setFormKind] = useState<ArtifactKind>('link');
   const [formTitle, setFormTitle] = useState('');
   const [formUrl, setFormUrl] = useState('');
   const [formNotes, setFormNotes] = useState('');
+
+  // Edit-form state (separate from add so opening an edit never clobbers a
+  // half-typed add and vice-versa).
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editNotes, setEditNotes] = useState('');
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -111,7 +123,55 @@ export function ProjectArtifactsTab({
       setAdding(false);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // API/network failure routes to the global toast (field validation
+      // above stays inline). Keeps the error surface consistent with Inbox.
+      toast.push(err instanceof Error ? err.message : String(err), { kind: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEdit(a: Artifact) {
+    setAdding(false);
+    setError(null);
+    setEditingId(a.id);
+    setEditTitle(a.title);
+    setEditUrl(a.url ?? '');
+    setEditNotes(a.notes ?? '');
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setError(null);
+  }
+
+  async function handleUpdate(a: Artifact) {
+    const title = editTitle.trim();
+    if (!title) {
+      setError(t('artifact.nameRequiredAlert'));
+      return;
+    }
+    const urlKind = URL_KINDS.includes(a.kind);
+    if (urlKind && !editUrl.trim()) {
+      setError(t('artifact.urlRequiredAlert'));
+      return;
+    }
+    if (!urlKind && !editNotes.trim()) {
+      setError(t('artifact.contentRequiredAlert'));
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await updateArtifact(a.id, {
+        title,
+        url: urlKind ? editUrl.trim() : null,
+        notes: !urlKind ? editNotes.trim() : null,
+      });
+      setEditingId(null);
+      await refresh();
+    } catch (err) {
+      toast.push(err instanceof Error ? err.message : String(err), { kind: 'error' });
     } finally {
       setSaving(false);
     }
@@ -123,7 +183,7 @@ export function ProjectArtifactsTab({
       await deleteArtifact(id);
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      toast.push(e instanceof Error ? e.message : String(e), { kind: 'error' });
     }
   }
 
@@ -337,6 +397,8 @@ export function ProjectArtifactsTab({
             const isOwn = auth.user?.id === a.createdById;
             const r = formatRelative(a.createdAt);
             const when = t(r.key, r.values ?? {});
+            const editing = editingId === a.id;
+            const rowIsUrlKind = URL_KINDS.includes(a.kind);
             return (
               <div key={a.id} className="rd-note" data-kind={a.kind}>
                 <div className="rd-stamp">
@@ -344,26 +406,92 @@ export function ProjectArtifactsTab({
                   <span>{kindLabel[a.kind]}</span>
                   <span>· {when}</span>
                   <span style={{ flex: 1 }} />
-                  {isOwn && canWrite && (
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(a.id)}
-                      className="rd-btn rd-btn-ghost rd-btn-sm"
-                      title={t('artifact.deleteTitle')}
-                    >
-                      ✕
-                    </button>
+                  {isOwn && canWrite && !editing && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(a)}
+                        className="rd-btn rd-btn-ghost rd-btn-sm"
+                        title={t('artifact.editTitle')}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(a.id)}
+                        className="rd-btn rd-btn-ghost rd-btn-sm"
+                        title={t('artifact.deleteTitle')}
+                      >
+                        ✕
+                      </button>
+                    </>
                   )}
                 </div>
-                <div className="rd-body" style={{ fontWeight: 600 }}>{a.title}</div>
-                {a.url && (
-                  <div className="rd-body">
-                    <a href={a.url} target="_blank" rel="noopener noreferrer">
-                      {a.url}
-                    </a>
+                {editing ? (
+                  <div style={{ display: 'grid', gap: 8, marginTop: 4 }}>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder={t('artifact.namePlaceholder')}
+                    />
+                    {rowIsUrlKind ? (
+                      <input
+                        type="text"
+                        value={editUrl}
+                        onChange={(e) => setEditUrl(e.target.value)}
+                        placeholder={
+                          a.kind === 'link'
+                            ? t('artifact.urlPlaceholderLink')
+                            : t('artifact.urlPlaceholderFile')
+                        }
+                      />
+                    ) : (
+                      <textarea
+                        rows={4}
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        placeholder={
+                          a.kind === 'code'
+                            ? t('artifact.contentPlaceholderCode')
+                            : a.kind === 'data'
+                              ? t('artifact.contentPlaceholderData')
+                              : t('artifact.contentPlaceholderNote')
+                        }
+                      />
+                    )}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        className="rd-btn rd-btn-primary rd-btn-sm"
+                        onClick={() => handleUpdate(a)}
+                        disabled={saving}
+                      >
+                        {t('common.save')}
+                      </button>
+                      <button
+                        type="button"
+                        className="rd-btn rd-btn-ghost rd-btn-sm"
+                        onClick={cancelEdit}
+                        disabled={saving}
+                      >
+                        {t('common.cancel')}
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <div className="rd-body" style={{ fontWeight: 600 }}>{a.title}</div>
+                    {a.url && (
+                      <div className="rd-body">
+                        <a href={a.url} target="_blank" rel="noopener noreferrer">
+                          {a.url}
+                        </a>
+                      </div>
+                    )}
+                    {a.notes && <div className="rd-body">{a.notes}</div>}
+                  </>
                 )}
-                {a.notes && <div className="rd-body">{a.notes}</div>}
               </div>
             );
           })}

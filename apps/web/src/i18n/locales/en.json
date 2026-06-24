@@ -510,6 +510,7 @@
     "viewer": "Viewer"
   },
   "artifact": {
+    "editTitle": "Edit artifact",
     "deleteConfirm": "Delete this artifact? This cannot be undone.",
     "loadError": "Failed to load artifacts",
     "panel": "Artifacts",

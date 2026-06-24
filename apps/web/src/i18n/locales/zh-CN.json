@@ -785,6 +785,12 @@
     "toggleSidebar": "打开/关闭侧边栏"
   },
   "settings": {
+    "sampleDataRestoreError": "恢复演示数据失败，请重试。",
+    "sampleDataRestoreConfirm": "确定恢复演示数据吗？这会用原始示例数据替换演示工作区当前的项目、任务和笔记，且无法撤销。",
+    "sampleDataRestoring": "正在恢复…",
+    "sampleDataRestore": "恢复演示",
+    "sampleDataHint": "恢复演示工作区的两个示例项目。这会替换演示工作区当前的项目、任务和笔记，不会影响你的其他工作区。",
+    "sampleData": "示例数据",
     "title": "设置",
     "workspace": "工作区",
     "intensityBudget": "每日强度预算",

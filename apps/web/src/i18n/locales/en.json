@@ -785,6 +785,12 @@
     "toggleSidebar": "Toggle sidebar"
   },
   "settings": {
+    "sampleDataRestoreError": "Couldn't restore the demo. Please try again.",
+    "sampleDataRestoreConfirm": "Restore the demo? This replaces the demo workspace's current projects, tasks and notes with the original sample data. This can't be undone.",
+    "sampleDataRestoring": "Restoring…",
+    "sampleDataRestore": "Restore demo",
+    "sampleDataHint": "Restore the demo workspace's two showcase projects. This replaces the demo workspace's current projects, tasks and notes — it does not touch your other workspaces.",
+    "sampleData": "Sample data",
     "title": "Settings",
     "workspace": "Workspace",
     "intensityBudget": "Daily intensity budget",

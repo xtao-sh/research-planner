@@ -35,6 +35,18 @@ export async function listWorkspaces(): Promise<WorkspaceSummary[]> {
   return fetchJson<WorkspaceSummary[]>('/api/workspaces');
 }
 
+/**
+ * Restore the demo workspace's sample data (wipe + re-seed the two showcase
+ * projects). Owner-only + double-confirmed on the server; the literal token
+ * is echoed after the caller's own UI confirm.
+ */
+export async function restoreDemoData(): Promise<void> {
+  await sendJson('/api/admin/reset-demo', {
+    method: 'POST',
+    body: JSON.stringify({ confirm: 'RESET_DEMO' }),
+  });
+}
+
 export async function createWorkspace(name: string): Promise<WorkspaceSummary> {
   const res = await sendJson('/api/workspaces', {
     method: 'POST',

@@ -40,6 +40,7 @@ import { emitEvent, diffFields } from './events';
 import { mergeTags, toNote, parseTags } from './notes';
 import { toArtifact } from './artifacts';
 import { ensureRuntimeSchema } from './migrate';
+import { restoreDemoWorkspace, DEMO_WORKSPACE_ID } from './seedFreshDemo';
 import type { EventRecord, InviteRecord, InvitePreview } from '@rp/shared';
 import {
   defaultWeeklyHoursJSON,
@@ -418,6 +419,13 @@ const memberRoleChangeSchema = z.object({
 
 const ownershipTransferSchema = z.object({
   userId: z.string().min(1),
+});
+
+// Double-confirm token for the destructive demo-reset endpoint. The client
+// must echo the literal string after its own confirm() so a stray/forged POST
+// can't wipe + reseed the demo workspace by accident.
+const resetDemoSchema = z.object({
+  confirm: z.literal('RESET_DEMO'),
 });
 
 const inviteAcceptSchema = z.object({
@@ -3164,6 +3172,26 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         notes: a.notes,
       })),
     };
+  });
+
+  // Restore sample data: wipe + re-seed the demo workspace's showcase
+  // projects. Owner-gated and double-confirmed. Scoped to ws-demo only, so a
+  // real (non-demo) workspace is never touched. Mirrors the access pattern of
+  // the member-management routes (assertWorkspaceAccess + isOwner).
+  app.post('/api/admin/reset-demo', async (req, rep) => {
+    // In multi-user deployments only the demo workspace's owner may reset it.
+    // In single-user mode the global preHandler resolves req.user to the demo
+    // user, who is already the ws-demo owner, so the same check passes.
+    const access = await assertWorkspaceAccess(prisma, DEMO_WORKSPACE_ID, req.user!.id);
+    if (!access) return rep.code(404).send({ message: 'Not found' });
+    if (!isOwner(access.role)) {
+      return rep.code(403).send({ message: 'Only the demo workspace owner can restore sample data' });
+    }
+    const parsed = resetDemoSchema.safeParse(req.body);
+    if (!parsed.success) return rep.code(400).send(zodErrorPayload(parsed.error));
+
+    await restoreDemoWorkspace(prisma);
+    return rep.code(200).send({ ok: true });
   });
 
   // Backup endpoint: returns every row of every workspace-scoped table the

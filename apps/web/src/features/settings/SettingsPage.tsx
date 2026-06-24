@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Task } from '@rp/shared';
 import { useAppData } from '../../contexts/AppDataContext';
+import { restoreDemoData } from '../../api/workspaces';
+import { ApiError } from '../../api/client';
 import { CalendarPanel } from '../calendar/CalendarPanel';
 import { canWrite as canWriteRole } from '../workspaces/permissions';
 import {
@@ -208,7 +210,61 @@ function WorkspaceTab() {
           onClose={() => setShowCalendar(false)}
         />
       )}
+
+      <SampleDataSection />
     </section>
+  );
+}
+
+function SampleDataSection() {
+  const { t } = useTranslation();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleRestore() {
+    if (!window.confirm(t('settings.sampleDataRestoreConfirm'))) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await restoreDemoData();
+      // Full reload re-fetches workspaces/projects/tasks and lands the user
+      // back on the freshly-seeded demo (no stale in-memory state).
+      window.location.reload();
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : t('settings.sampleDataRestoreError')
+      );
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 480, marginTop: 8 }}>
+      <label
+        style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}
+      >
+        {t('settings.sampleData')}
+      </label>
+      <p
+        className="muted"
+        style={{ fontSize: 12, marginTop: 0, marginBottom: 8, color: 'var(--rd-ink-3)' }}
+      >
+        {t('settings.sampleDataHint')}
+      </p>
+      <button
+        type="button"
+        className="rd-btn rd-btn-sm"
+        onClick={handleRestore}
+        disabled={busy}
+      >
+        {busy ? t('settings.sampleDataRestoring') : t('settings.sampleDataRestore')}
+      </button>
+      {error && (
+        <p style={{ fontSize: 12, marginTop: 8, color: 'var(--rd-danger, #c0392b)' }}>
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

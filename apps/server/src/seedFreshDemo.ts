@@ -23,7 +23,8 @@
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 
-const DEMO_WORKSPACE_ID = 'ws-demo';
+export const DEMO_WORKSPACE_ID = 'ws-demo';
+export const DEMO_USER_EMAIL = 'demo@local';
 
 // Helper — date offsets relative to "now" (today). Positive = future.
 function daysFromNow(days: number, hours = 9): Date {
@@ -551,17 +552,43 @@ const P2: SeedProject = {
 // MAIN
 // ============================================================
 async function wipeProjectScopedData(prisma: PrismaClient): Promise<void> {
-  // Order matters: children before parents to respect FKs.
-  // (Prisma SQLite cascades most of these, but being explicit is safer.)
-  await prisma.event.deleteMany({});
-  await prisma.scenario.deleteMany({});
-  await prisma.dependency.deleteMany({});
-  await prisma.note.deleteMany({});
-  await prisma.task.deleteMany({});
-  await prisma.milestone.deleteMany({});
-  await prisma.project.deleteMany({});
+  // Scoped to the demo workspace ONLY — this runs from an in-app endpoint, so
+  // it must never touch a real (non-demo) workspace's data. Project deletes
+  // cascade to tasks/deps/milestones/scenarios; events and notes carry a
+  // direct workspaceId and are cleared explicitly. Order: dependent rows
+  // first, then projects.
+  const ws = DEMO_WORKSPACE_ID;
+  await prisma.event.deleteMany({ where: { workspaceId: ws } });
+  await prisma.scenario.deleteMany({ where: { project: { workspaceId: ws } } });
+  await prisma.dependency.deleteMany({ where: { project: { workspaceId: ws } } });
+  await prisma.note.deleteMany({ where: { workspaceId: ws } });
+  await prisma.task.deleteMany({ where: { project: { workspaceId: ws } } });
+  await prisma.milestone.deleteMany({ where: { project: { workspaceId: ws } } });
+  await prisma.project.deleteMany({ where: { workspaceId: ws } });
   // eslint-disable-next-line no-console
-  console.log('[wipe] cleared projects, tasks, deps, milestones, notes, scenarios, events');
+  console.log('[wipe] cleared demo-workspace projects, tasks, deps, milestones, notes, scenarios, events');
+}
+
+/**
+ * Re-seed the demo workspace with the two showcase projects. Idempotent:
+ * clears the demo workspace's existing project-scoped data first, then
+ * inserts P1/P2. Users, workspaces, calendars and sessions are preserved.
+ *
+ * Exported for the in-app "restore demo" endpoint (POST /api/admin/reset-demo);
+ * the CLI `main()` below is a thin wrapper around it.
+ */
+export async function restoreDemoWorkspace(prisma: PrismaClient): Promise<void> {
+  const demoUser = await prisma.user.findUnique({
+    where: { email: DEMO_USER_EMAIL },
+  });
+  if (!demoUser) {
+    throw new Error(
+      `${DEMO_USER_EMAIL} user not found — run the regular seed first to create the demo user/workspace.`
+    );
+  }
+  await wipeProjectScopedData(prisma);
+  await seedProject(prisma, DEMO_WORKSPACE_ID, demoUser.id, P1);
+  await seedProject(prisma, DEMO_WORKSPACE_ID, demoUser.id, P2);
 }
 
 async function seedProject(
@@ -671,20 +698,7 @@ async function seedProject(
 async function main(): Promise<void> {
   const prisma = new PrismaClient();
   try {
-    // sanity: demo user must exist
-    const demoUser = await prisma.user.findUnique({
-      where: { email: 'demo@local' },
-    });
-    if (!demoUser) {
-      throw new Error(
-        'demo@local user not found — run the regular seed first to create the demo user/workspace.'
-      );
-    }
-
-    await wipeProjectScopedData(prisma);
-    await seedProject(prisma, DEMO_WORKSPACE_ID, demoUser.id, P1);
-    await seedProject(prisma, DEMO_WORKSPACE_ID, demoUser.id, P2);
-
+    await restoreDemoWorkspace(prisma);
     // eslint-disable-next-line no-console
     console.log('[done] seeded 2 demo projects');
   } finally {
@@ -692,8 +706,13 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error(err);
-  process.exitCode = 1;
-});
+// Only run the CLI when invoked directly (`npx tsx seedFreshDemo.ts`); importing
+// this module (e.g. from the reset endpoint) must NOT wipe + reseed as a side
+// effect.
+if (require.main === module) {
+  main().catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error(err);
+    process.exitCode = 1;
+  });
+}

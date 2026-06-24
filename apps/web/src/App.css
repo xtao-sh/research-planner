@@ -5023,6 +5023,18 @@ h4 {
    inherit the warm-neutral surface without per-component edits.
    ========================================================================= */
 :root {
+  /* ───────────────────────────────────────────────────────────────────
+     SOURCE OF TRUTH: the --rd-* token land below is canonical.
+     The app currently ships two token systems — this --rd-* (OKLCH, with
+     proper per-theme dark inversion in [data-theme="dark"]) and the older
+     legacy hex land in the :root at the top of this file (--ink-*/--paper/
+     --st-*). They are NOT 1:1: in light mode the legacy land is hex navy/
+     ivory while --rd-* is warm-neutral OKLCH, so re-pointing legacy aliases
+     at --rd-* would change the light-mode rendering. New work MUST consume
+     --rd-* tokens. Migration of legacy consumers (.task-item-enhanced /
+     forms) onto --rd-* is intentionally deferred — see issue #2. Do NOT
+     do a big-bang alias rename; it requires visual judgment per surface.
+     ─────────────────────────────────────────────────────────────────── */
   /* Warm-neutral surface (replaces the prior plotting-paper ivory).
      The redesign's bg sits between paper and bg-sunk; we keep --paper
      pointing at the bright surface so cards still contrast on the page. */

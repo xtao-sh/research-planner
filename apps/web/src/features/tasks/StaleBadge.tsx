@@ -21,8 +21,8 @@ export function StaleBadge({ task }: { task: Task }) {
     borderRadius: 999,
     fontSize: '0.75rem',
     fontWeight: 600,
-    background: isDoing ? '#fef3c7' : '#fee2e2',
-    color: isDoing ? '#92400e' : '#991b1b',
+    background: isDoing ? 'var(--st-review-bg)' : 'var(--st-blocked-bg)',
+    color: isDoing ? 'var(--st-review-fg)' : 'var(--st-blocked-fg)',
   };
   const label = isDoing
     ? t('task.staleDoing', { n: days })

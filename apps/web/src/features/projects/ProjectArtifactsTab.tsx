@@ -338,7 +338,7 @@ export function ProjectArtifactsTab({
             const r = formatRelative(a.createdAt);
             const when = t(r.key, r.values ?? {});
             return (
-              <div key={a.id} className="rd-note">
+              <div key={a.id} className="rd-note" data-kind={a.kind}>
                 <div className="rd-stamp">
                   <span aria-hidden>{KIND_ICON[a.kind]}</span>
                   <span>{kindLabel[a.kind]}</span>

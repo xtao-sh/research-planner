@@ -430,10 +430,10 @@ export function AppLayout() {
                       borderRadius: '50%',
                       background:
                         wsLastError === 'unauthorized'
-                          ? '#ef4444'
+                          ? 'var(--rd-st-blocked)'
                           : wsConnected
-                          ? '#22c55e'
-                          : '#9ca3af',
+                          ? 'var(--rd-st-done)'
+                          : 'var(--rd-ink-4)',
                     }}
                   />
                 )}

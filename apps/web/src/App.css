@@ -407,7 +407,7 @@ h4 {
 .card {
   background: var(--paper);
   border: 1px solid var(--ink-100);
-  border-radius: var(--r-lg);
+  border-radius: var(--rd-radius-card);
   padding: var(--s-4) var(--s-5);
   margin-bottom: var(--s-4);
   box-shadow: var(--sh-card);
@@ -471,9 +471,8 @@ h4 {
 }
 
 .project-list button.active {
-  border-color: var(--warning-color);
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
-  transform: translateX(4px);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 /* 项目摘要 */
@@ -814,7 +813,7 @@ h4 {
   background: var(--paper-2);
 }
 .task-section--today .task-item-enhanced.selected {
-  background: var(--paper-1);
+  background: var(--paper);
 }
 
 .task-item-content:focus {
@@ -1092,7 +1091,7 @@ h4 {
 .priority-input-compact:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .priority-input-compact {
@@ -1132,7 +1131,6 @@ h4 {
 .task-item:hover {
   border-color: var(--primary-color);
   box-shadow: var(--shadow-md);
-  transform: translateX(4px);
 }
 
 .task-item-header {
@@ -1293,7 +1291,7 @@ h4 {
   padding: 1rem;
   border-radius: var(--radius-md);
   margin-bottom: 1rem;
-  border: 2px solid #bbf7d0;
+  border: 1px solid var(--st-done);
 }
 
 .schedule-meta div {
@@ -1536,7 +1534,6 @@ h4 {
 }
 
 .impact-item:hover {
-  transform: translateX(4px);
   box-shadow: var(--shadow-md);
 }
 
@@ -1675,7 +1672,6 @@ h4 {
 
 .kanban-card:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
 }
 
 .kanban-card.cognitive {
@@ -1853,7 +1849,7 @@ h4 {
 .capacity-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .capacity-summary {
@@ -1929,7 +1925,7 @@ h4 {
 
 .week-day.today {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .week-day.over-capacity {
@@ -1946,7 +1942,6 @@ h4 {
 
 .week-day:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
 }
 
 /* Week Task Drag Styles */
@@ -2262,7 +2257,7 @@ h4 {
 .form-textarea:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .form-textarea {
@@ -2495,7 +2490,6 @@ h4 {
 
 .journal-entry:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
 }
 
 .journal-entry-header {
@@ -3082,7 +3076,6 @@ h4 {
 
 .review-recommendation:hover {
   background: var(--bg-tertiary);
-  transform: translateX(4px);
 }
 
 /* Task Lists */
@@ -3126,7 +3119,7 @@ h4 {
   font-size: 0.75rem;
   color: var(--danger-color);
   font-weight: 600;
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--st-blocked-bg);
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
 }
@@ -5126,6 +5119,20 @@ h4 {
   --rd-shadow-1: 0 1px 2px oklch(0.18 0.01 85 / 0.04), 0 1px 1px oklch(0.18 0.01 85 / 0.03);
   --rd-shadow-2: 0 4px 12px oklch(0.18 0.01 85 / 0.06), 0 1px 2px oklch(0.18 0.01 85 / 0.04);
   --rd-shadow-3: 0 12px 32px oklch(0.18 0.01 85 / 0.10), 0 2px 4px oklch(0.18 0.01 85 / 0.05);
+
+  /* ---- Bare-name compat aliases. ~26 Artifact/form rules reference these
+     short names (var(--primary)/var(--danger)/var(--bg-hover)) but only the
+     -color/-secondary variants were ever declared, so they computed to their
+     initial value (transparent fill, collapsed borders). Alias to existing
+     theme-aware tokens so light + dark both resolve without per-rule edits. */
+  --primary:  var(--accent);
+  --danger:   var(--st-blocked);
+  --bg-hover: var(--paper-2);
+
+  /* Shared card corner radius — collapses the 8/12/14 drift across the
+     redesign (.rd-task-row, .rd-flow-card were 8px; .rd-proj-card/
+     .rd-skeleton-card/.rd-empty-state 12px; legacy .card 14px) onto one stop. */
+  --rd-radius-card: 12px;
 }
 
 /* Body surface override — warm neutral instead of paper. */
@@ -5457,7 +5464,7 @@ body {
   padding: 10px 14px;
   background: var(--rd-surface);
   border: 1px solid var(--rd-line);
-  border-radius: 8px;
+  border-radius: var(--rd-radius-card);
   margin-bottom: 6px;
   cursor: pointer;
   position: relative;
@@ -5749,7 +5756,7 @@ body {
 .rd-proj-card {
   background: var(--rd-surface);
   border: 1px solid var(--rd-line);
-  border-radius: 12px;
+  border-radius: var(--rd-radius-card);
   padding: 16px;
   position: relative;
   cursor: pointer;
@@ -6100,7 +6107,7 @@ button.rd-briefing-cell:active {
   cursor: pointer;
   font-family: inherit;
 }
-.rd-briefing-close:hover { background: oklch(0.92 0.02 75); }
+.rd-briefing-close:hover { background: var(--rd-briefing-cell-border); }
 
 /* =========================================================================
    Flow Board (Kanban with size + intensity cards) — Progress mode default
@@ -6208,7 +6215,7 @@ button.rd-briefing-cell:active {
 .rd-flow-card {
   background: var(--rd-surface);
   border: 1px solid var(--rd-line);
-  border-radius: 8px;
+  border-radius: var(--rd-radius-card);
   padding: 10px 12px;
   margin-bottom: 6px;
   cursor: pointer;
@@ -6243,6 +6250,8 @@ button.rd-briefing-cell:active {
 .rd-flow-card .rd-foot {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  row-gap: 4px;
   gap: 6px;
 }
 .rd-flow-card .rd-age {
@@ -6640,10 +6649,17 @@ button.rd-briefing-cell:active {
 .rd-note {
   background: var(--rd-surface);
   border: 1px solid var(--rd-line);
-  border-left: 3px solid var(--type-research);
+  border-left: 3px solid var(--rd-note-accent, var(--type-research));
   border-radius: 0 8px 8px 0;
   padding: 12px 14px;
 }
+/* Artifact rows reuse .rd-note but carry a kind. Drive the left bar from the
+   kind so 🔗📎💻📊📝 each read distinctly; plain notes keep the purple bar. */
+.rd-note[data-kind="link"] { --rd-note-accent: var(--type-personal); }
+.rd-note[data-kind="file"] { --rd-note-accent: var(--type-admin); }
+.rd-note[data-kind="code"] { --rd-note-accent: var(--type-daily); }
+.rd-note[data-kind="data"] { --rd-note-accent: var(--tf-quarter); }
+.rd-note[data-kind="note"] { --rd-note-accent: var(--type-research); }
 .rd-note .rd-stamp {
   display: flex;
   align-items: center;
@@ -6677,10 +6693,16 @@ button.rd-briefing-cell:active {
 .rd-tag {
   font-size: 11px;
   color: var(--type-research);
-  background: oklch(0.95 0.04 295);
+  background: oklch(from var(--type-research) 0.95 0.04 h);
   padding: 1px 7px;
   border-radius: 999px;
   white-space: nowrap;
+}
+/* Dark mode: sink the tag instead of a near-white pill. Tracks the
+   research-type hue but on a dark surface with lifted ink. */
+[data-theme="dark"] .rd-tag {
+  background: oklch(0.28 0.05 295);
+  color: oklch(0.82 0.10 295);
 }
 /* Inline tag highlighter — wraps a #tag inside note body. */
 .rd-tag-inline {
@@ -7044,7 +7066,7 @@ button.rd-briefing-cell:active {
   font-size: 13.5px;
   line-height: 1.5;
   border: 1px dashed var(--rd-line);
-  border-radius: 12px;
+  border-radius: var(--rd-radius-card);
   background: var(--rd-bg-sunk);
 }
 .rd-empty-state .rd-icon {
@@ -7225,7 +7247,7 @@ button.rd-briefing-cell:active {
 .rd-skeleton-card {
   background: var(--rd-surface);
   border: 1px solid var(--rd-line);
-  border-radius: 12px;
+  border-radius: var(--rd-radius-card);
   padding: 16px;
   margin-bottom: 12px;
 }

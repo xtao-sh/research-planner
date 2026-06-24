@@ -176,6 +176,8 @@
   },
   "task": {
     "notesStrip": {
+      "count": "{{count}} captured note",
+      "count_other": "{{count}} captured notes",
       "title": "Notes on this task",
       "empty": "No notes linked to this task yet",
       "add": "Capture into this task"
@@ -1023,7 +1025,7 @@
     "groupProjects": "PROJECTS",
     "groupTasks": "TASKS",
     "groupNotes": "NOTES",
-    "groupSearch": "DEEP SEARCH",
+    "groupSearch": "FULL SEARCH · #tags & filters",
     "moreCount": "+ {{n}} more",
     "searchFor": "Search for \"{{query}}\""
   },

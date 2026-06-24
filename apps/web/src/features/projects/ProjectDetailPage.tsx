@@ -703,6 +703,15 @@ export function ProjectDetailPage() {
     () => [...tasks].sort((a, b) => a.priority - b.priority),
     [tasks]
   );
+  // Per-task captured-note counts for the Flow Board badge (issue #5).
+  // Reuses projectNotes already loaded for the Notes tab — no extra fetch.
+  const noteCountsByTask = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const n of projectNotes) {
+      if (n.taskId) counts[n.taskId] = (counts[n.taskId] ?? 0) + 1;
+    }
+    return counts;
+  }, [projectNotes]);
   const metrics = useMemo(() => {
     const total = tasks.length;
     const doing = tasks.filter((tk) => tk.status === 'doing').length;
@@ -1064,6 +1073,7 @@ export function ProjectDetailPage() {
               </div>
               <KanbanView
                 tasks={tasksByPriority}
+                noteCounts={noteCountsByTask}
                 onTaskClick={handleSelectTask}
                 onStatusChange={(taskId, newStatus) =>
                   applyTaskPatch(taskId, { status: newStatus })

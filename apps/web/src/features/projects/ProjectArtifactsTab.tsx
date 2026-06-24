@@ -300,7 +300,7 @@ export function ProjectArtifactsTab({
       {adding && canWrite && (
         <form className="card" style={{ padding: 16, marginBottom: 16 }} onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gap: 12 }}>
-            <label style={{ display: 'grid', gap: 4 }}>
+            <label className="form-group" style={{ display: 'grid', gap: 4, marginBottom: 0 }}>
               <span className="rd-section-eyebrow" style={{ margin: 0 }}>
                 {t('artifact.typeLabel')}
               </span>
@@ -316,7 +316,7 @@ export function ProjectArtifactsTab({
               </select>
             </label>
 
-            <label style={{ display: 'grid', gap: 4 }}>
+            <label className="form-group" style={{ display: 'grid', gap: 4, marginBottom: 0 }}>
               <span className="rd-section-eyebrow" style={{ margin: 0 }}>
                 {t('artifact.nameLabel')}
               </span>
@@ -329,7 +329,7 @@ export function ProjectArtifactsTab({
             </label>
 
             {isUrlKind ? (
-              <label style={{ display: 'grid', gap: 4 }}>
+              <label className="form-group" style={{ display: 'grid', gap: 4, marginBottom: 0 }}>
                 <span className="rd-section-eyebrow" style={{ margin: 0 }}>
                   {formKind === 'link' ? t('artifact.urlLinkRequired') : t('artifact.urlFile')}
                 </span>
@@ -345,7 +345,7 @@ export function ProjectArtifactsTab({
                 />
               </label>
             ) : (
-              <label style={{ display: 'grid', gap: 4 }}>
+              <label className="form-group" style={{ display: 'grid', gap: 4, marginBottom: 0 }}>
                 <span className="rd-section-eyebrow" style={{ margin: 0 }}>
                   {t('artifact.contentRequired')}
                 </span>

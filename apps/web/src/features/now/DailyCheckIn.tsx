@@ -114,7 +114,7 @@ export function DailyCheckIn({
 
   return (
     <section
-      className="rd-briefing"
+      className="rd-briefing rd-briefing--daily"
       role="region"
       aria-label={t('now.dailyCheckin.title')}
     >

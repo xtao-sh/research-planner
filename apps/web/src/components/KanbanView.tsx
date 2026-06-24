@@ -45,6 +45,11 @@ interface KanbanViewProps {
    *  tasks across every column, a single first-run empty state replaces the
    *  five '—' columns; this wires its primary button (e.g. handleNewTask). */
   onAddTask?: () => void;
+  /** Per-task captured-note counts, keyed by task id. When a task has > 0
+   *  notes a small badge renders on its card foot; clicking the card opens
+   *  the drawer where the notes strip lives. Surfaces Note↔task linkage on
+   *  the board (issue #5). Omitted/0 → no badge. */
+  noteCounts?: Record<string, number>;
 }
 
 const STATUS_LIST: Task['status'][] = ['todo', 'doing', 'blocked', 'review', 'done'];
@@ -57,6 +62,7 @@ export function KanbanView({
   onReorder,
   wipLimits,
   onAddTask,
+  noteCounts,
 }: KanbanViewProps) {
   const { t } = useTranslation();
 
@@ -282,6 +288,7 @@ export function KanbanView({
                       isFocused={isFocused}
                       typeLabel={getTypeLabel(task.type)}
                       dueHardLabel={t('task.dueHard')}
+                      noteCount={noteCounts?.[task.id] ?? 0}
                       onClick={() => onTaskClick?.(task.id)}
                       onToggleFocus={onToggleFocus}
                       dndDisabled={dndDisabled}
@@ -375,6 +382,8 @@ interface SortableFlowCardProps {
   isFocused: boolean;
   typeLabel: string;
   dueHardLabel: string;
+  /** Number of notes captured against this task; 0 hides the badge. */
+  noteCount: number;
   onClick: () => void;
   onToggleFocus?: (taskId: string, focused: boolean) => void;
   dndDisabled: boolean;
@@ -391,6 +400,7 @@ const SortableFlowCard = React.memo(
   isFocused,
   typeLabel,
   dueHardLabel,
+  noteCount,
   onClick,
   onToggleFocus,
   dndDisabled,
@@ -404,7 +414,7 @@ const SortableFlowCard = React.memo(
     transition,
     isDragging,
   } = useSortable({ id: task.id, disabled: dndDisabled });
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -457,6 +467,18 @@ const SortableFlowCard = React.memo(
             variant="compact"
           />
         )}
+        {noteCount > 0 && (
+          // Note↔task linkage indicator. The badge isn't separately
+          // interactive — clicking anywhere on the card (this span included)
+          // opens the drawer, whose notes strip shows the linked notes.
+          <span
+            className="rd-note-badge"
+            title={t('task.notesStrip.count', { count: noteCount })}
+            aria-label={t('task.notesStrip.count', { count: noteCount })}
+          >
+            <span aria-hidden="true">📝</span> {noteCount}
+          </span>
+        )}
         {task.dueHard && (
           <span
             className="rd-age"
@@ -494,6 +516,7 @@ const SortableFlowCard = React.memo(
     a.isFocused === b.isFocused &&
     a.dndDisabled === b.dndDisabled &&
     a.hideForOverlay === b.hideForOverlay &&
+    a.noteCount === b.noteCount &&
     a.typeLabel === b.typeLabel &&
     a.dueHardLabel === b.dueHardLabel
 );

@@ -176,6 +176,8 @@
   },
   "task": {
     "notesStrip": {
+      "count": "{{count}} 条捕获笔记",
+      "count_other": "{{count}} 条捕获笔记",
       "title": "该任务的笔记",
       "empty": "还没有笔记挂到这个任务上",
       "add": "记一笔到此任务"
@@ -1023,7 +1025,7 @@
     "groupProjects": "项目",
     "groupTasks": "任务",
     "groupNotes": "笔记",
-    "groupSearch": "深度搜索",
+    "groupSearch": "完整搜索 · #标签与筛选",
     "moreCount": "+ 还有 {{n}} 项",
     "searchFor": "搜索 “{{query}}”"
   },

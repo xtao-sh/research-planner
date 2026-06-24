@@ -6107,7 +6107,18 @@ button.rd-briefing-cell:active {
   cursor: pointer;
   font-family: inherit;
 }
-.rd-briefing-close:hover { background: var(--rd-briefing-cell-border); }
+
+/* DailyCheckIn variant (issue #49): swaps the warm-amber gradient for the
+   cool focus-blue status family so it reads as a distinct card when it
+   stacks above NowBriefingCard (which keeps the amber treatment). Reuses
+   the --rd-st-doing tokens, which are theme-aware in both light and dark. */
+.rd-briefing--daily {
+  --rd-briefing-bg-1: var(--rd-surface);
+  --rd-briefing-bg-2: var(--rd-st-doing-tint);
+  --rd-briefing-border: var(--rd-st-doing);
+  --rd-briefing-eyebrow: var(--rd-st-doing);
+  border-left: 3px solid var(--rd-st-doing);
+}
 
 /* =========================================================================
    Flow Board (Kanban with size + intensity cards) — Progress mode default
@@ -6254,12 +6265,22 @@ button.rd-briefing-cell:active {
   row-gap: 4px;
   gap: 6px;
 }
-.rd-flow-card .rd-age {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
+
+/* Captured-note count badge on Flow Board cards (issue #5). Mirrors the
+   muted-pill vocabulary of the card foot; not separately clickable — the
+   whole card opens the drawer where the notes strip lives. */
+.rd-flow-card .rd-note-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: 10.5px;
-  color: var(--rd-ink-3);
+  font-weight: 600;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: var(--rd-st-doing);
+  background: var(--rd-st-doing-tint);
+  font-variant-numeric: tabular-nums;
 }.rd-flow-card .rd-drag-handle {
   position: absolute;
   top: 8px;

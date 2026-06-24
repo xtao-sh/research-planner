@@ -285,6 +285,9 @@ export function AppLayout() {
       className="app-shell"
       data-mobile-open={mobileOpen ? 'true' : undefined}
     >
+      <a href="#main" className="skip-link">
+        {t('nav.skipToContent')}
+      </a>
       <button
         type="button"
         className="app-shell-mobile-toggle"
@@ -489,6 +492,8 @@ export function AppLayout() {
           spread to satisfy React's typing (it landed in React 19; our
           types may not have it yet). */}
       <main
+        id="main"
+        tabIndex={-1}
         className="app-shell-main"
         aria-hidden={mobileOpen || undefined}
         {...(mobileOpen ? { inert: '' } : {})}

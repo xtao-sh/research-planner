@@ -850,7 +850,33 @@ export function ProjectDetailPage() {
             />
           )}
           {projectId && (
-            <nav className="rd-tab-bar" role="tablist" aria-label={t('projectTabs.tasks')}>
+            <nav
+              className="rd-tab-bar"
+              role="tablist"
+              aria-label={t('projectTabs.tasks')}
+              onKeyDown={(e) => {
+                const idx = PROJECT_TABS.indexOf(activeTab);
+                let nextIdx: number | null = null;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                  nextIdx = (idx + 1) % PROJECT_TABS.length;
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                  nextIdx =
+                    (idx - 1 + PROJECT_TABS.length) % PROJECT_TABS.length;
+                } else if (e.key === 'Home') {
+                  nextIdx = 0;
+                } else if (e.key === 'End') {
+                  nextIdx = PROJECT_TABS.length - 1;
+                }
+                if (nextIdx !== null) {
+                  e.preventDefault();
+                  const nextTab = PROJECT_TABS[nextIdx];
+                  setActiveTab(nextTab);
+                  e.currentTarget
+                    .querySelector<HTMLElement>(`#rd-tab-${nextTab}`)
+                    ?.focus();
+                }
+              }}
+            >
               {PROJECT_TABS.map((tab) => {
                 const labelMap: Record<ProjectTab, string> = {
                   tasks: t('projectTabs.tasks'),
@@ -868,9 +894,12 @@ export function ProjectDetailPage() {
                 return (
                   <button
                     key={tab}
+                    id={`rd-tab-${tab}`}
                     type="button"
                     role="tab"
                     aria-selected={activeTab === tab}
+                    aria-controls={`rd-tabpanel-${tab}`}
+                    tabIndex={activeTab === tab ? 0 : -1}
                     className={`rd-tab ${activeTab === tab ? 'active' : ''}`}
                     onClick={() => setActiveTab(tab)}
                   >
@@ -885,32 +914,54 @@ export function ProjectDetailPage() {
           )}
 
           {activeTab === 'notes' && projectId && (
-            <ProjectNotesTab
-              projectId={projectId}
-              refreshTrigger={eventTick}
-              onOpenCapture={() =>
-                window.dispatchEvent(new CustomEvent('rp:open-capture'))
-              }
-            />
+            <div
+              role="tabpanel"
+              id="rd-tabpanel-notes"
+              aria-labelledby="rd-tab-notes"
+            >
+              <ProjectNotesTab
+                projectId={projectId}
+                refreshTrigger={eventTick}
+                onOpenCapture={() =>
+                  window.dispatchEvent(new CustomEvent('rp:open-capture'))
+                }
+              />
+            </div>
           )}
 
           {activeTab === 'artifacts' && projectId && (
-            <ProjectArtifactsTab
-              projectId={projectId}
-              refreshTrigger={eventTick}
-              canWrite={canWriteActiveWorkspace}
-            />
+            <div
+              role="tabpanel"
+              id="rd-tabpanel-artifacts"
+              aria-labelledby="rd-tab-artifacts"
+            >
+              <ProjectArtifactsTab
+                projectId={projectId}
+                refreshTrigger={eventTick}
+                canWrite={canWriteActiveWorkspace}
+              />
+            </div>
           )}
 
           {activeTab === 'timeline' && projectId && (
-            <ProjectTimelineTab
-              projectId={projectId}
-              refreshTrigger={eventTick}
-            />
+            <div
+              role="tabpanel"
+              id="rd-tabpanel-timeline"
+              aria-labelledby="rd-tab-timeline"
+            >
+              <ProjectTimelineTab
+                projectId={projectId}
+                refreshTrigger={eventTick}
+              />
+            </div>
           )}
 
           {activeTab === 'tasks' && (
-          <>
+          <div
+            role="tabpanel"
+            id="rd-tabpanel-tasks"
+            aria-labelledby="rd-tab-tasks"
+          >
           {/* MilestonePanel removed — milestone verticals already render on
               the Uncertainty Lane (Deadline mode) and the design canvas
               doesn't surface a separate milestones list above the task
@@ -1262,7 +1313,7 @@ export function ProjectDetailPage() {
               />
             </section>
           )}
-          </>
+          </div>
           )}
         </>
       )}

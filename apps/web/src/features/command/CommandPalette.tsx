@@ -137,12 +137,18 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       setResults(EMPTY_RESULTS);
       return;
     }
+    // Remember the element that had focus before the palette opened so we
+    // can restore it on close (WCAG 2.4.3 Focus Order).
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     // Focus shortly after mount so the input exists in the DOM.
     const handle = window.setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
     }, 0);
-    return () => window.clearTimeout(handle);
+    return () => {
+      window.clearTimeout(handle);
+      previouslyFocused?.focus?.();
+    };
   }, [open]);
 
   // 100ms debounce — power-user speed.
@@ -448,6 +454,13 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             ref={inputRef}
             type="text"
             className="rd-input"
+            role="combobox"
+            aria-expanded={flat.length > 0}
+            aria-controls="rd-cmd-listbox"
+            aria-activedescendant={
+              flat.length > 0 ? `rd-cmd-opt-${highlightIndex}` : undefined
+            }
+            aria-autocomplete="list"
             value={rawQuery}
             placeholder={t('palette.placeholder')}
             onChange={(e) => {
@@ -470,6 +483,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
         <div
           ref={listRef}
+          id="rd-cmd-listbox"
+          role="listbox"
+          aria-label={t('palette.title')}
           style={{
             overflow: 'auto',
             flex: 1,
@@ -516,6 +532,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                   return (
                     <CommandRow
                       key={r.id}
+                      id={`rd-cmd-opt-${myIdx}`}
                       result={r}
                       query={query}
                       active={isActive}
@@ -545,6 +562,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 }
 
 interface CommandRowProps {
+  id: string;
   result: Result;
   query: string;
   active: boolean;
@@ -553,6 +571,7 @@ interface CommandRowProps {
 }
 
 function CommandRow({
+  id,
   result,
   query,
   active,
@@ -647,6 +666,7 @@ function CommandRow({
 
   return (
     <div
+      id={id}
       role="option"
       aria-selected={active}
       onMouseEnter={onMouseEnter}

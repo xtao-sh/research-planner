@@ -769,6 +769,7 @@
     "daySun": "Sun"
   },
   "nav": {
+    "skipToContent": "Skip to content",
     "now": "Now",
     "sidebarLandmark": "Sidebar",
     "primaryNav": "Primary",

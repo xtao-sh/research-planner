@@ -45,6 +45,7 @@ export function IntensityBars({
     <span
       className={['rd-intensity', className].filter(Boolean).join(' ')}
       data-level={level}
+      role="img"
       aria-label={String(t('task.intensityHint', { n: level }))}
     >
       <span className="rd-bar" />

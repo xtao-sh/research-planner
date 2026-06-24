@@ -125,8 +125,14 @@ export function ShortcutsHelpModal({ open, onClose }: ShortcutsHelpModalProps) {
       }
     }
     root.addEventListener('keydown', onKey);
+    // Remember the element that had focus before the modal opened so we can
+    // restore it on close (WCAG 2.4.3 Focus Order).
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     setTimeout(() => focusables()[0]?.focus(), 30);
-    return () => root.removeEventListener('keydown', onKey);
+    return () => {
+      root.removeEventListener('keydown', onKey);
+      previouslyFocused?.focus?.();
+    };
   }, [open]);
 
   if (!open) return null;

@@ -119,6 +119,9 @@ export function QuickCaptureModal({
   // auto-focused by the open-effect above; this just wraps Tab/Shift+Tab.
   useEffect(() => {
     if (!open || !trapRef.current) return;
+    // Remember the element that had focus before the modal opened so we can
+    // restore it on close (WCAG 2.4.3 Focus Order).
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     const root = trapRef.current;
     const focusables = () =>
       Array.from(
@@ -141,7 +144,10 @@ export function QuickCaptureModal({
       }
     }
     root.addEventListener('keydown', onKey);
-    return () => root.removeEventListener('keydown', onKey);
+    return () => {
+      root.removeEventListener('keydown', onKey);
+      previouslyFocused?.focus?.();
+    };
   }, [open]);
 
   if (!open) return null;

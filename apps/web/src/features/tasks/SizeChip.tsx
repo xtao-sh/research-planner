@@ -26,6 +26,7 @@ export function SizeChip({ size, className }: SizeChipProps) {
   return (
     <span
       className={['rd-size-chip', className].filter(Boolean).join(' ')}
+      role="img"
       aria-label={label}
     >
       {v.toUpperCase()}

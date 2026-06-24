@@ -769,6 +769,7 @@
     "daySun": "周日"
   },
   "nav": {
+    "skipToContent": "跳到主要内容",
     "now": "今日",
     "sidebarLandmark": "侧边栏",
     "primaryNav": "主导航",

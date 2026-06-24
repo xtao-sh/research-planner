@@ -8,6 +8,7 @@ import {
   getProjectScenarios,
 } from '../../api/scenarios';
 import { useToast } from '../../components/Toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 /**
  * ScenarioPanel — compact "save + compare" affordance for the deadline-mode
@@ -63,6 +64,7 @@ export function ScenarioPanel({
 }: ScenarioPanelProps) {
   const { t } = useTranslation();
   const toast = useToast();
+  const confirm = useConfirm();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -111,7 +113,7 @@ export function ScenarioPanel({
 
   const handleDelete = useCallback(
     async (s: Scenario) => {
-      if (!window.confirm(t('schedule.deleteScenario', { name: s.name }))) return;
+      if (!(await confirm({ message: t('schedule.deleteScenario', { name: s.name }) }))) return;
       try {
         await deleteScenario(s.id);
         if (activeScenarioId === s.id) onActiveChange(null, null, null);

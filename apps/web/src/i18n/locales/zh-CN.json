@@ -1,4 +1,8 @@
 {
+  "confirm": {
+    "title": "确定吗？",
+    "confirmCta": "删除"
+  },
   "onboard": {
     "title": "欢迎使用 Research Planner",
     "subtitle": "这款计划器的设计基于三个理念，了解它们只需片刻。",

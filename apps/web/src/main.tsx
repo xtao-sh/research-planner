@@ -5,6 +5,7 @@ import './i18n';
 import { App } from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
+import { ConfirmProvider } from './components/ConfirmDialog';
 
 const root = createRoot(document.getElementById('root')!);
 root.render(
@@ -12,7 +13,9 @@ root.render(
     <BrowserRouter>
       <ErrorBoundary>
         <ToastProvider>
-          <App />
+          <ConfirmProvider>
+            <App />
+          </ConfirmProvider>
         </ToastProvider>
       </ErrorBoundary>
     </BrowserRouter>

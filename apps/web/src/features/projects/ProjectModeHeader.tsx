@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { Project, ProjectMode } from '@rp/shared';
 import { getProjectTypeMeta } from './projectTypes';
 import { formatRelative } from '../../utils/time';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface ProjectModeHeaderProps {
   project: Project;
@@ -31,9 +32,10 @@ export function ProjectModeHeader({
   onDelete,
 }: ProjectModeHeaderProps) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const typeMeta = getProjectTypeMeta(project.type);
 
-  const handleDeleteClick = () => {
+  const handleDeleteClick = async () => {
     const msg =
       taskCount > 0
         ? t('project.confirmDeleteWithTasks', {
@@ -41,7 +43,7 @@ export function ProjectModeHeader({
             count: taskCount,
           })
         : t('project.confirmDelete', { name: project.name });
-    if (window.confirm(msg)) {
+    if (await confirm({ message: msg })) {
       onDelete();
     }
   };

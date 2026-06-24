@@ -10,6 +10,7 @@ import {
 } from '../../api/artifacts';
 import { formatRelative } from '../../utils/time';
 import { useToast } from '../../components/Toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { SkeletonList } from '../../components/Skeleton';
 
 interface ProjectArtifactsTabProps {
@@ -47,6 +48,7 @@ export function ProjectArtifactsTab({
   const { t } = useTranslation();
   const { auth } = useAppData();
   const toast = useToast();
+  const confirm = useConfirm();
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +180,7 @@ export function ProjectArtifactsTab({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t('artifact.deleteConfirm'))) return;
+    if (!(await confirm({ message: t('artifact.deleteConfirm') }))) return;
     try {
       await deleteArtifact(id);
       await refresh();

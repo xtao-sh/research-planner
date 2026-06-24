@@ -16,6 +16,7 @@ import {
 } from '../../api/workspaces';
 import { canManageMembers, isOwner } from './permissions';
 import { useToast } from '../../components/Toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface MembersPanelProps {
   workspaceId: string;
@@ -36,6 +37,7 @@ export function MembersPanel({
 }: MembersPanelProps) {
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const confirm = useConfirm();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -123,7 +125,7 @@ export function MembersPanel({
 
   const handleRemove = useCallback(
     async (userId: string) => {
-      if (!window.confirm(t('workspace.confirmRemove'))) return;
+      if (!(await confirm({ message: t('workspace.confirmRemove') }))) return;
       setRemovingUserId(userId);
       setActionError(null);
       try {
@@ -193,7 +195,7 @@ export function MembersPanel({
 
   const handleRevokeInvite = useCallback(
     async (invite: InviteRecord) => {
-      if (!window.confirm(t('invite.confirmRevoke', { email: invite.email }))) return;
+      if (!(await confirm({ message: t('invite.confirmRevoke', { email: invite.email }) }))) return;
       setRevokingInviteId(invite.id);
       setActionError(null);
       try {

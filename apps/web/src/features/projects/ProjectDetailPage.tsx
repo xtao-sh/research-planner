@@ -45,6 +45,7 @@ import { ScenarioPanel } from './ScenarioPanel';
 import { ProjectModeHeader } from './ProjectModeHeader';
 import { SkeletonList } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 // 'lane' | 'gantt' are the only view modes that have UI affordances now.
 // 'lane' renders the UncertaintyLane; 'gantt' renders the Gantt. The
@@ -64,6 +65,7 @@ function parseTab(value: string | null): ProjectTab {
 export function ProjectDetailPage() {
   const { t, i18n } = useTranslation();
   const toast = useToast();
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
   const {
@@ -477,7 +479,7 @@ export function ProjectDetailPage() {
 
   async function handleDeleteTask(taskId: string) {
     if (!projectId) return;
-    if (!confirm(t('task.confirmDelete'))) return;
+    if (!(await confirm({ message: t('task.confirmDelete') }))) return;
     try {
       await sendJson(`/api/tasks/${taskId}`, { method: 'DELETE' });
       if (selectedTaskId === taskId) {

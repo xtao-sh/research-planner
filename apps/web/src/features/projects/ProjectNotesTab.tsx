@@ -5,6 +5,7 @@ import { useAppData } from '../../contexts/AppDataContext';
 import { deleteNote, getProjectNotes, promoteNoteToTask } from '../../api/notes';
 import { formatRelative } from '../../utils/time';
 import { useToast } from '../../components/Toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { SkeletonList } from '../../components/Skeleton';
 
 interface ProjectNotesTabProps {
@@ -58,6 +59,7 @@ export function ProjectNotesTab({
   onOpenCapture,
 }: ProjectNotesTabProps) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const { auth, projects } = useAppData();
   const toast = useToast();
   const project = projects.find((p) => p.id === projectId);
@@ -84,7 +86,7 @@ export function ProjectNotesTab({
   }, [refresh, refreshTrigger]);
 
   async function handleDelete(noteId: string) {
-    if (!confirm(t('inbox.confirmDelete'))) return;
+    if (!(await confirm({ message: t('inbox.confirmDelete') }))) return;
     try {
       await deleteNote(noteId);
       await refresh();

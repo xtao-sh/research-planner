@@ -1,4 +1,8 @@
 {
+  "confirm": {
+    "title": "Are you sure?",
+    "confirmCta": "Delete"
+  },
   "onboard": {
     "title": "Welcome to Research Planner",
     "subtitle": "Three ideas shape how this planner works. Each takes a few seconds to learn.",

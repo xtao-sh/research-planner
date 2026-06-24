@@ -438,20 +438,29 @@ const SortableFlowCard = React.memo(
       ref={setNodeRef}
       style={style}
       className={`rd-flow-card ${isFocused ? 'focused' : ''}`}
-      onClick={onClick}
-      title={typeLabel}
-      aria-label={`${task.title} — ${typeLabel}`}
-      {...attributes}
-      {...listeners}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          onClick();
-          return;
-        }
-        dndKeyDown?.(e);
-      }}
     >
+      {/* Full-bleed hit layer carries the drag (dnd-kit attributes/listeners),
+          open-on-click, and keyboard (Space pickup + Enter open). Card content
+          sits above it but is pointer-transparent, so the whole card still
+          drags/opens from anywhere — while the focus pin is a real sibling
+          button (no more nested-interactive: WCAG 4.1.2). */}
+      <button
+        type="button"
+        className="rd-card-hit"
+        onClick={onClick}
+        title={typeLabel}
+        aria-label={`${task.title} — ${typeLabel}`}
+        {...attributes}
+        {...listeners}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            onClick();
+            return;
+          }
+          dndKeyDown?.(e);
+        }}
+      />
       <span className="rd-drag-handle" aria-hidden="true">⋮⋮</span>
       <div className="rd-title">{task.title}</div>
       {/* Card foot atoms ordered per the canonical row schema documented
@@ -499,6 +508,7 @@ const SortableFlowCard = React.memo(
           // Pointer events on the wrapping span aren't intercepted by
           // dnd-kit listeners since the inner button toggles its own state.
           <span
+            className="rd-card-pin-slot"
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >

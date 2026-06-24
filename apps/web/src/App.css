@@ -6263,10 +6263,39 @@ button.rd-briefing-cell:active {
   border-radius: var(--rd-radius-card);
   padding: 10px 12px;
   margin-bottom: 6px;
-  cursor: pointer;
   position: relative;
   box-shadow: var(--rd-shadow-1);
   transition: border-color 0.08s, box-shadow 0.08s;
+}
+/* Full-bleed drag/open/keyboard target. Sits under the content; the content
+   is pointer-transparent so the whole card still drags & opens from anywhere,
+   while the focus pin (.rd-card-pin-slot) re-enables its own pointer events as
+   a sibling button — resolving the nested-interactive a11y violation. */
+.rd-card-hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: inherit;
+  cursor: grab;
+  z-index: 0;
+}
+.rd-card-hit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.rd-flow-card > .rd-title,
+.rd-flow-card > .rd-foot {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+.rd-flow-card > .rd-foot .rd-card-pin-slot {
+  pointer-events: auto;
 }
 .rd-flow-card:hover {
   border-color: var(--rd-line-strong);

@@ -362,7 +362,7 @@ const scenarioCreateSchema = z.object({
   durationMode: z.enum(['expected', 'optimistic', 'pessimistic']),
 });
 
-const artifactKindSchema = z.enum(['link', 'file', 'code', 'data', 'note']);
+const artifactKindSchema = z.enum(['link', 'file', 'code', 'data']);
 
 const artifactCreateSchema = z.object({
   kind: artifactKindSchema,

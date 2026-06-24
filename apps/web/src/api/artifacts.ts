@@ -1,5 +1,6 @@
 // Artifacts API client. Artifacts are project-scoped attachments
-// (link / file / code / data / note) shown on the project's Artifacts tab.
+// (link / file / code / data) shown on the project's Artifacts tab.
+// Free-text prose lives in project Notes, not as an artifact kind.
 
 import type { Artifact, ArtifactKind } from '@rp/shared';
 import { fetchJson, sendJson } from './client';

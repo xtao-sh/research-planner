@@ -534,7 +534,6 @@
     "contentOptional": "内容",
     "contentPlaceholderCode": "粘贴代码片段...",
     "contentPlaceholderData": "粘贴数据（JSON、CSV等）...",
-    "contentPlaceholderNote": "输入笔记内容...",
     "tagsLabel": "标签",
     "tagsPlaceholder": "标签1, 标签2, ...",
     "submit": "添加产出",
@@ -544,7 +543,6 @@
     "filterFile": "📎 文件 ({{count}})",
     "filterCode": "💻 代码 ({{count}})",
     "filterData": "📊 数据 ({{count}})",
-    "filterNote": "📝 笔记 ({{count}})",
     "empty": "暂无产出，点击上方按钮添加第一个产出",
     "noMatches": "没有找到匹配的产出",
     "deleteTitle": "删除产出",
@@ -557,7 +555,6 @@
     "optionFile": "📎 文件",
     "optionCode": "💻 代码",
     "optionData": "📊 数据",
-    "optionNote": "📝 笔记",
     "nameRequiredAlert": "请输入产出名称",
     "urlRequiredAlert": "请输入链接URL",
     "contentRequiredAlert": "请输入内容"

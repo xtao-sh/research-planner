@@ -222,9 +222,12 @@ export interface Note {
 }
 
 // Project artifacts (the 4th project tab). A minimal, typed attachment record
-// — a link / file / code / data / note produced or referenced by the project.
-// (Distinct from the task-level `ArtifactLink` above.)
-export type ArtifactKind = 'link' | 'file' | 'code' | 'data' | 'note';
+// — a link / file / code / data reference produced by the project. Free-text
+// prose lives in project Notes (capturable, taggable, task-linkable, searched,
+// surfaced in re-entry briefings), so artifacts deliberately omit a 'note'
+// kind to avoid a second, weaker note store. (Distinct from the task-level
+// `ArtifactLink` above.)
+export type ArtifactKind = 'link' | 'file' | 'code' | 'data';
 
 export interface Artifact {
   id: ID;

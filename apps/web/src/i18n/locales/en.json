@@ -534,7 +534,6 @@
     "contentOptional": "Content",
     "contentPlaceholderCode": "Paste code snippet...",
     "contentPlaceholderData": "Paste data (JSON, CSV, etc.)...",
-    "contentPlaceholderNote": "Enter note content...",
     "tagsLabel": "Tags",
     "tagsPlaceholder": "tag1, tag2, ...",
     "submit": "Add artifact",
@@ -544,7 +543,6 @@
     "filterFile": "📎 Files ({{count}})",
     "filterCode": "💻 Code ({{count}})",
     "filterData": "📊 Data ({{count}})",
-    "filterNote": "📝 Notes ({{count}})",
     "empty": "No artifacts yet — click above to add your first one",
     "noMatches": "No matching artifacts",
     "deleteTitle": "Delete artifact",
@@ -557,7 +555,6 @@
     "optionFile": "📎 File",
     "optionCode": "💻 Code",
     "optionData": "📊 Data",
-    "optionNote": "📝 Note",
     "nameRequiredAlert": "Please enter an artifact name",
     "urlRequiredAlert": "Please enter a URL",
     "contentRequiredAlert": "Please enter content"

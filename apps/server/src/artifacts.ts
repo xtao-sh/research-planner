@@ -2,7 +2,8 @@
  * Artifact helpers (Artifacts tab).
  *
  * Artifacts are project-scoped attachments: a typed link / file / code /
- * data / note produced or referenced by a project. Mirrors the Note mapper
+ * data reference produced or referenced by a project. Free-text prose belongs
+ * in project Notes, not here. Mirrors the Note mapper
  * shape (createdBy email join) so the UI can attribute who added each one.
  */
 import type { Prisma } from '@prisma/client';

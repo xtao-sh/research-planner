@@ -21,12 +21,14 @@ interface ProjectArtifactsTabProps {
   canWrite: boolean;
 }
 
-const KINDS: ArtifactKind[] = ['link', 'file', 'code', 'data', 'note'];
+const KINDS: ArtifactKind[] = ['link', 'file', 'code', 'data'];
 
 // Kinds that take a URL (vs. a free-text content body).
 const URL_KINDS: ArtifactKind[] = ['link', 'file'];
 
-const KIND_ICON: Record<ArtifactKind, string> = {
+// Widened to Record<string,...> so a legacy DB row with the dropped 'note'
+// kind still renders an icon (indexing sites fall back to a generic glyph).
+const KIND_ICON: Record<string, string> = {
   link: '🔗',
   file: '📎',
   code: '💻',
@@ -196,7 +198,6 @@ export function ProjectArtifactsTab({
       file: 0,
       code: 0,
       data: 0,
-      note: 0,
     };
     for (const a of artifacts) c[a.kind] += 1;
     return c;
@@ -221,10 +222,11 @@ export function ProjectArtifactsTab({
     { key: 'file', label: t('artifact.filterFile', { count: counts.file }) },
     { key: 'code', label: t('artifact.filterCode', { count: counts.code }) },
     { key: 'data', label: t('artifact.filterData', { count: counts.data }) },
-    { key: 'note', label: t('artifact.filterNote', { count: counts.note }) },
   ];
 
-  const kindLabel: Record<ArtifactKind, string> = {
+  // Record<string,...> so a legacy 'note'-kind row still resolves a label
+  // (the artifact.typeNote key is retained for exactly this fallback).
+  const kindLabel: Record<string, string> = {
     link: t('artifact.typeLink'),
     file: t('artifact.typeFile'),
     code: t('artifact.typeCode'),
@@ -314,7 +316,6 @@ export function ProjectArtifactsTab({
                 <option value="file">{t('artifact.optionFile')}</option>
                 <option value="code">{t('artifact.optionCode')}</option>
                 <option value="data">{t('artifact.optionData')}</option>
-                <option value="note">{t('artifact.optionNote')}</option>
               </select>
             </label>
 
@@ -358,9 +359,7 @@ export function ProjectArtifactsTab({
                   placeholder={
                     formKind === 'code'
                       ? t('artifact.contentPlaceholderCode')
-                      : formKind === 'data'
-                        ? t('artifact.contentPlaceholderData')
-                        : t('artifact.contentPlaceholderNote')
+                      : t('artifact.contentPlaceholderData')
                   }
                 />
               </label>
@@ -456,9 +455,7 @@ export function ProjectArtifactsTab({
                         placeholder={
                           a.kind === 'code'
                             ? t('artifact.contentPlaceholderCode')
-                            : a.kind === 'data'
-                              ? t('artifact.contentPlaceholderData')
-                              : t('artifact.contentPlaceholderNote')
+                            : t('artifact.contentPlaceholderData')
                         }
                       />
                     )}

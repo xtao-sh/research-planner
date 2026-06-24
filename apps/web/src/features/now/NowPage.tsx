@@ -289,7 +289,7 @@ export function NowPage() {
               : t('now.summary', {
                   doing: doingTasks.length,
                   blocked: blockedTasks.length,
-                  focused: focusedShown.length,
+                  focused: focusedTasks.length,
                 })}
           </div>
         </div>
@@ -547,7 +547,9 @@ function CapacityRail({ focused }: { focused: Task[] }) {
           </span>
         )}
       </div>
-      <div className="rd-capacity-label">{t('now.intensityCommitted')}</div>
+      <div className="rd-capacity-label" title={t('now.capacityHint')}>
+        {t('now.intensityCommitted')}
+      </div>
       <div
         className={`rd-capacity-track${overBudget ? ' over' : ''}`}
         aria-label={`${used} of ${budget} used`}

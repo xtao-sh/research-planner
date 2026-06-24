@@ -183,7 +183,7 @@ export function ProjectArtifactsTab({
         }}
       >
         <div className="rd-section-eyebrow" style={{ margin: 0 }}>
-          {t('artifact.panel')}
+          <span aria-hidden="true">🗂️</span> {t('artifact.panel')}
         </div>
         <span style={{ flex: 1 }} />
         <input

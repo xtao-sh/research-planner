@@ -500,7 +500,7 @@
   "artifact": {
     "deleteConfirm": "Delete this artifact? This cannot be undone.",
     "loadError": "Failed to load artifacts",
-    "panel": "🗂️ Artifacts",
+    "panel": "Artifacts",
     "addArtifact": "+ Add artifact",
     "typeLabel": "Artifact type",
     "nameLabel": "Name *",
@@ -709,11 +709,7 @@
     "thisWeekShowed": "What this week showed",
     "tasksMoved": "tasks moved",
     "completed": "completed",
-    "stillBlocked": "still blocked",
-    "observationBlocked": "{{n}} task(s) still blocked. Consider unblocking or splitting.",
-    "observationCompleted": "Completed {{n}} task(s) this week.",
-    "observationDormant": "Project '{{name}}' dormant {{n}} days. Surface it.",
-    "observationCapacity": "Capacity is signal, not score. Use a low-intensity day to recover."
+    "stillBlocked": "still blocked"
   },
   "search": {
     "panel": "🔍 Search",
@@ -816,7 +812,7 @@
     "intensityCommitted": "intensity-points committed",
     "overBy": "over by {{n}}",
     "budget": "budget",
-    "capacityHint": "Each task burns intensity-points by cognitive load, not minutes. A 4-hour deep proof costs more than 4 hours of email.",
+    "capacityHint": "Each task burns intensity-points by cognitive load, not minutes. A 2-hour deep proof can cost more than a 10-hour inbox day.",
     "calendarTitle": "Next 7 days · Capacity",
     "calendarSub": "What clears in 1-2 days. Pinned tasks crowd the day.",
     "topOfMind": "Top of mind",
@@ -842,7 +838,7 @@
     "last14DaysCaption": "Energy distribution from your last two weeks.",
     "quickCapture": "Quick capture",
     "quickCapturePrompt": "Caught mid-thought? Drop it now.",
-    "quickCaptureCta": "+ new thought",
+    "quickCaptureCta": "+ Capture",
     "briefingDefaultHeadline": "Pick up where you left off.",
     "loadEstimateRange": "{{o}}–{{p}}h (likely {{m}})",
     "briefing": {
@@ -931,7 +927,7 @@
     "savedToInbox": "Saved to inbox",
     "errorSave": "Failed to save",
     "openHotkeyHint": "⌘⇧N to capture anywhere",
-    "openButton": "New thought",
+    "openButton": "Capture",
     "hint": "Tip: include #hashtags inline; we will pull them out for you.",
     "inboxHint": "Falls into Inbox unless you tag a project"
   },

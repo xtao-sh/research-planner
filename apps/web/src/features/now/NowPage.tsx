@@ -1135,15 +1135,6 @@ function NowTaskRow({
   return (
     <div
       className="rd-task-row"
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick();
-        }
-      }}
       style={{ ['--rd-row-status' as string]: rowStatusColor } as React.CSSProperties}
     >
       <button
@@ -1185,7 +1176,7 @@ function NowTaskRow({
         </span>
       )}
 
-      <div>
+      <button type="button" className="rd-task-open" onClick={onClick}>
         <div className="rd-title">{task.title}</div>
         {/* Atoms ordered per the canonical row schema documented in
             features/tasks/rowMetadata.ts: identity (project tag) ·
@@ -1242,7 +1233,7 @@ function NowTaskRow({
               matches the other surfaces (Kanban, TaskListPanel, SearchPage). */}
           <StaleBadge task={task} />
         </div>
-      </div>
+      </button>
       <span aria-hidden="true" />
     </div>
   );

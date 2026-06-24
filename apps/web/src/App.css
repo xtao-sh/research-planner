@@ -5027,8 +5027,8 @@ h4 {
      SOURCE OF TRUTH: the --rd-* token land below is canonical.
      The app currently ships two token systems — this --rd-* (OKLCH, with
      proper per-theme dark inversion in [data-theme="dark"]) and the older
-     legacy hex land in the :root at the top of this file (--ink-*/--paper/
-     --st-*). They are NOT 1:1: in light mode the legacy land is hex navy/
+     legacy hex land in the :root at the top of this file (--ink, --paper,
+     --st). They are NOT 1:1: in light mode the legacy land is hex navy/
      ivory while --rd-* is warm-neutral OKLCH, so re-pointing legacy aliases
      at --rd-* would change the light-mode rendering. New work MUST consume
      --rd-* tokens. Migration of legacy consumers (.task-item-enhanced /
@@ -5478,13 +5478,35 @@ body {
   border: 1px solid var(--rd-line);
   border-radius: var(--rd-radius-card);
   margin-bottom: 6px;
-  cursor: pointer;
   position: relative;
   transition: box-shadow 0.08s, border-color 0.08s;
 }
 .rd-task-row:hover {
   box-shadow: var(--rd-shadow-2);
   border-color: var(--rd-line-strong);
+}
+/* The row's open action is a real button filling the 1fr title column
+   (a11y: no more role=button div wrapping the pin/status buttons). It resets
+   all native chrome so it reads as the row body. */
+.rd-task-open {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+  cursor: pointer;
+  display: block;
+}
+.rd-task-open:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 .rd-task-row::before {
   content: '';

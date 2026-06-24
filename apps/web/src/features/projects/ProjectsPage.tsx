@@ -358,9 +358,13 @@ function ProjectCard({
         {stale.level === 'dormant' && (
           <span className="rd-dormant">{t('projectsPage.stats.dormant') || 'dormant'}</span>
         )}
-        {project.mode === 'deadline' && (
+        {project.mode === 'deadline' ? (
           <span style={{ marginLeft: 'auto', color: 'oklch(0.55 0.13 70)', fontWeight: 600 }}>
             ⌛ {t('project.mode.deadline')}
+          </span>
+        ) : (
+          <span style={{ marginLeft: 'auto', color: 'var(--rd-ink-3)', fontWeight: 500 }}>
+            {t('project.mode.progress')}
           </span>
         )}
       </div>

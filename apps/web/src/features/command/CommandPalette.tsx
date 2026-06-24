@@ -34,7 +34,8 @@ function highlightMatches(text: string, query: string): React.ReactNode {
   return <>{parts}</>;
 }
 
-type RouteKey = 'now' | 'inbox' | 'projects' | 'review' | 'search';
+type RouteKey = 'now' | 'inbox' | 'projects' | 'review' | 'search' | 'settings';
+type ActionKey = 'newProject' | 'capture' | 'help';
 type SearchTask = SearchResults['tasks'][number];
 type SearchNote = SearchResults['notes'][number];
 type SearchProject = SearchResults['projects'][number];
@@ -71,8 +72,16 @@ interface SearchFallbackResult {
   to: string;
   query: string;
 }
+interface ActionResult {
+  kind: 'action';
+  id: string;
+  label: string;
+  glyph: string;
+  run: () => void;
+}
 type Result =
   | RouteResult
+  | ActionResult
   | ProjectResult
   | TaskResult
   | NoteResult
@@ -85,6 +94,12 @@ const ROUTE_DEFS: Array<{ key: RouteKey; to: string; glyph: string }> = [
   { key: 'projects', to: '/projects', glyph: '▦' },
   { key: 'review', to: '/review', glyph: '◔' },
   { key: 'search', to: '/search', glyph: '⌕' },
+  { key: 'settings', to: '/settings', glyph: '⚙' },
+];
+const ACTION_DEFS: Array<{ key: ActionKey; glyph: string; event: string }> = [
+  { key: 'newProject', glyph: '＋', event: 'rp:new-project' },
+  { key: 'capture', glyph: '✎', event: 'rp:open-capture' },
+  { key: 'help', glyph: '?', event: 'rp:open-shortcuts' },
 ];
 
 const EMPTY_RESULTS: SearchResults = {
@@ -186,6 +201,18 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     return list.filter((r) => r.label.toLowerCase().includes(lowered));
   }, [trimmed, lowered, t]);
 
+  const actionResults = useMemo<ActionResult[]>(() => {
+    const list: ActionResult[] = ACTION_DEFS.map((a) => ({
+      kind: 'action',
+      id: `action:${a.key}`,
+      label: t(`palette.action_${a.key}` as const),
+      glyph: a.glyph,
+      run: () => window.dispatchEvent(new CustomEvent(a.event)),
+    }));
+    if (!trimmed) return list;
+    return list.filter((a) => a.label.toLowerCase().includes(lowered));
+  }, [trimmed, lowered, t]);
+
   const projectResults = useMemo<ProjectResult[]>(() => {
     if (!trimmed) {
       // Empty query: show top 5 pinned (the first 5 from useAppData().projects).
@@ -242,13 +269,21 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   // Cap each group at PER_GROUP_LIMIT for the visible list, but keep the
   // total count for the "+N more" hint.
   interface Group {
-    key: 'routes' | 'projects' | 'tasks' | 'notes' | 'search';
+    key: 'actions' | 'routes' | 'projects' | 'tasks' | 'notes' | 'search';
     label: string;
     visible: Result[];
     extra: number;
   }
   const groups = useMemo<Group[]>(() => {
     const g: Group[] = [];
+    if (actionResults.length > 0) {
+      g.push({
+        key: 'actions',
+        label: t('palette.groupActions'),
+        visible: actionResults.slice(0, PER_GROUP_LIMIT),
+        extra: Math.max(0, actionResults.length - PER_GROUP_LIMIT),
+      });
+    }
     if (routeResults.length > 0) {
       g.push({
         key: 'routes',
@@ -290,7 +325,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       });
     }
     return g;
-  }, [routeResults, projectResults, taskResults, noteResults, searchFallback, t]);
+  }, [actionResults, routeResults, projectResults, taskResults, noteResults, searchFallback, t]);
 
   // Flatten visible results into a single navigable array.
   const flat = useMemo<Result[]>(() => {
@@ -308,6 +343,11 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
   const activate = useCallback(
     (r: Result) => {
+      if (r.kind === 'action') {
+        onClose();
+        r.run();
+        return;
+      }
       if (r.kind === 'note' && r.to == null) return;
       if (r.kind === 'note' && r.to) {
         navigate(r.to);
@@ -536,7 +576,7 @@ function CommandRow({
   let title: React.ReactNode = null;
   let meta: React.ReactNode = null;
 
-  if (result.kind === 'route') {
+  if (result.kind === 'route' || result.kind === 'action') {
     leftIcon = (
       <span className="rd-glyph" aria-hidden="true" style={{ fontSize: 14 }}>
         {result.glyph}

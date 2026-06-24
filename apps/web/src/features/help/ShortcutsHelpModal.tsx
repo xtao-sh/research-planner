@@ -11,7 +11,10 @@ type DescriptionKey =
   | 'shortcuts.commandPalette'
   | 'shortcuts.help'
   | 'shortcuts.saveInModal'
-  | 'shortcuts.closeModal';
+  | 'shortcuts.closeModal'
+  | 'shortcuts.boardPickup'
+  | 'shortcuts.boardMove'
+  | 'shortcuts.boardOpen';
 
 interface ShortcutDef {
   keys: { mac: string; other: string };
@@ -40,6 +43,21 @@ const SHORTCUTS: ShortcutDef[] = [
   {
     keys: { mac: 'Esc', other: 'Esc' },
     descriptionKey: 'shortcuts.closeModal',
+  },
+  // Flow board (KanbanView) keyboard interactions — see KanbanView's
+  // KeyboardSensor: Space picks up / drops a card, arrows move it, Enter
+  // opens the focused card.
+  {
+    keys: { mac: 'Space', other: 'Space' },
+    descriptionKey: 'shortcuts.boardPickup',
+  },
+  {
+    keys: { mac: '← ↑ → ↓', other: '← ↑ → ↓' },
+    descriptionKey: 'shortcuts.boardMove',
+  },
+  {
+    keys: { mac: '↵', other: 'Enter' },
+    descriptionKey: 'shortcuts.boardOpen',
   },
 ];
 

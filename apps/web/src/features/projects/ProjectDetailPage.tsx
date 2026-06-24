@@ -46,9 +46,10 @@ import { ProjectModeHeader } from './ProjectModeHeader';
 import { SkeletonList } from '../../components/Skeleton';
 import { useToast } from '../../components/Toast';
 
-// 'kanban' | 'gantt' are the only view modes that have UI affordances now.
+// 'lane' | 'gantt' are the only view modes that have UI affordances now.
+// 'lane' renders the UncertaintyLane; 'gantt' renders the Gantt. The
 // 'dependencies' and 'week' components remain on disk but are unreachable.
-type ViewMode = 'gantt' | 'kanban';
+type ViewMode = 'lane' | 'gantt';
 
 type ProjectTab = 'tasks' | 'notes' | 'artifacts' | 'timeline';
 const PROJECT_TABS: ProjectTab[] = ['tasks', 'notes', 'artifacts', 'timeline'];
@@ -105,7 +106,7 @@ export function ProjectDetailPage() {
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
   const [showTree, setShowTree] = useState(false);
   const [creatingNew, setCreatingNew] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('gantt');
+  const [viewMode, setViewMode] = useState<ViewMode>('lane');
   const [durationMode, setDurationMode] = useState<DurationMode>('expected');
   // Scenario comparison: a saved-snapshot id whose bars get drawn as a ghost
   // overlay on the lane / Gantt. Stored in three separate slots so the
@@ -1166,14 +1167,14 @@ export function ProjectDetailPage() {
               <h2>{t('view.visualizations')}</h2>
               <div className="view-tabs">
                 <button
-                  className={`view-tab ${viewMode === 'gantt' ? 'active' : ''}`}
-                  onClick={() => setViewMode('gantt')}
+                  className={`view-tab ${viewMode === 'lane' ? 'active' : ''}`}
+                  onClick={() => setViewMode('lane')}
                 >
                   {t('view.lane')}
                 </button>
                 <button
-                  className={`view-tab ${viewMode === 'kanban' ? 'active' : ''}`}
-                  onClick={() => setViewMode('kanban')}
+                  className={`view-tab ${viewMode === 'gantt' ? 'active' : ''}`}
+                  onClick={() => setViewMode('gantt')}
                 >
                   {t('view.gantt')}
                 </button>
@@ -1201,7 +1202,7 @@ export function ProjectDetailPage() {
                   envelope with the most-likely M solid inside it. The
                   legacy Gantt sits behind the second tab for users who
                   want a single-line timeline. */}
-              {viewMode === 'gantt' && (
+              {viewMode === 'lane' && (
                 <UncertaintyLane
                   items={scheduleItems}
                   tasks={tasks}
@@ -1218,7 +1219,7 @@ export function ProjectDetailPage() {
                   }
                 />
               )}
-              {viewMode === 'kanban' && (
+              {viewMode === 'gantt' && (
                 <Gantt
                   items={scheduleItems}
                   tasks={tasks}

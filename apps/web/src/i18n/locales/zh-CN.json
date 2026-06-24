@@ -91,7 +91,7 @@
     "tasks": "任务",
     "notes": "笔记",
     "artifacts": "附件",
-    "timeline": "时间线"
+    "timeline": "活动"
   },
   "notesTab": {
     "filterPlaceholder": "按内容或标签搜索…",
@@ -321,10 +321,7 @@
   "view": {
     "visualizations": "可视化视图",
     "lane": "不确定区间",
-    "gantt": "甘特图",
-    "dependencies": "依赖图",
-    "kanban": "看板",
-    "week": "周计划"
+    "gantt": "甘特图"
   },
   "milestone": {
     "panel": "里程碑",
@@ -967,6 +964,9 @@
     "readOnly": "只有管理员或编辑者可以切换"
   },
   "shortcuts": {
+    "boardOpen": "打开聚焦的卡片（看板）",
+    "boardMove": "移动手中的卡片（看板）",
+    "boardPickup": "拿起／放下卡片（看板）",
     "title": "键盘快捷键",
     "open": "查看快捷键",
     "quickCapture": "快速记录任意想法",
@@ -976,6 +976,10 @@
     "closeModal": "关闭当前弹窗"
   },
   "palette": {
+    "action_help": "键盘快捷键",
+    "action_capture": "快速记录",
+    "action_newProject": "新建项目",
+    "groupActions": "操作",
     "title": "命令面板",
     "placeholder": "快速跳转到任何地方…",
     "empty": "输入以搜索任何内容。",

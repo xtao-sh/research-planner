@@ -91,7 +91,7 @@
     "tasks": "Tasks",
     "notes": "Notes",
     "artifacts": "Artifacts",
-    "timeline": "Timeline"
+    "timeline": "Activity"
   },
   "notesTab": {
     "filterPlaceholder": "Search by content or tag…",
@@ -321,10 +321,7 @@
   "view": {
     "visualizations": "Visualizations",
     "lane": "Uncertainty Lane",
-    "gantt": "Gantt",
-    "dependencies": "Dependencies",
-    "kanban": "Kanban",
-    "week": "Week"
+    "gantt": "Gantt"
   },
   "milestone": {
     "panel": "Milestones",
@@ -967,6 +964,9 @@
     "readOnly": "Only admins/editors can change this"
   },
   "shortcuts": {
+    "boardOpen": "Open the focused card (board)",
+    "boardMove": "Move the held card (board)",
+    "boardPickup": "Pick up / drop a card (board)",
     "title": "Keyboard shortcuts",
     "open": "View shortcuts",
     "quickCapture": "Quick capture anywhere",
@@ -976,6 +976,10 @@
     "closeModal": "Close any open modal"
   },
   "palette": {
+    "action_help": "Keyboard shortcuts",
+    "action_capture": "Quick capture",
+    "action_newProject": "New project",
+    "groupActions": "ACTIONS",
     "title": "Command palette",
     "placeholder": "Jump to anything…",
     "empty": "Type to find anything.",

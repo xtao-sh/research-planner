@@ -171,11 +171,14 @@ export function AppLayout() {
       setCaptureProjectId(detail?.projectId ?? null);
       setShowCapture(true);
     };
+    const openShortcuts = () => setShowShortcutsHelp(true);
     window.addEventListener('rp:new-project', newProj);
     window.addEventListener('rp:open-capture', openCap);
+    window.addEventListener('rp:open-shortcuts', openShortcuts);
     return () => {
       window.removeEventListener('rp:new-project', newProj);
       window.removeEventListener('rp:open-capture', openCap);
+      window.removeEventListener('rp:open-shortcuts', openShortcuts);
     };
   }, []);
 
@@ -229,6 +232,7 @@ export function AppLayout() {
     { to: '/projects', key: 'projects' as const, glyph: '▦' },
     { to: '/review', key: 'review' as const, glyph: '◔' },
     { to: '/search', key: 'search' as const, glyph: '⌕' },
+    { to: '/settings', key: 'settings' as const, glyph: '⚙' },
   ];
 
   // Pinned projects in sidebar — first 4 active. The redesign surfaces

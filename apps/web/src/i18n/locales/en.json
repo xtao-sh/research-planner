@@ -1,4 +1,19 @@
 {
+  "onboard": {
+    "title": "Welcome to Research Planner",
+    "subtitle": "Three ideas shape how this planner works. Each takes a few seconds to learn.",
+    "belief": {
+      "progressTitle": "Progress over deadlines",
+      "progressBody": "You move work across a status flow — To do, Doing, Done — instead of racing a due date. Progress is the signal.",
+      "progressCta": "Create your first project",
+      "captureTitle": "Capture before structure",
+      "captureBody": "Caught mid-thought? Drop it into the inbox now and file it later — never lose an idea to formatting.",
+      "captureCta": "Capture a thought",
+      "reentryTitle": "Context on re-entry",
+      "reentryBody": "Come back to a project after a few days and a briefing tells you what moved, what's stuck, and where you left off."
+    },
+    "dismiss": "Got it"
+  },
   "common": {
     "save": "Save",
     "delete": "Delete",
@@ -603,6 +618,9 @@
     "typeAdmin": "Admin"
   },
   "kanban": {
+    "emptyBoardCta": "Add your first task",
+    "emptyBoardHint": "Cards live in status columns — drag them right as work progresses.",
+    "emptyBoardTitle": "Add your first task",
     "todo": "To do",
     "doing": "Doing",
     "blocked": "Blocked",
@@ -780,6 +798,10 @@
     "helper": "Cards show size × intensity, not estimated minutes. Drag to move; status time auto-records."
   },
   "now": {
+    "zeroCapture": "Capture a thought",
+    "zeroNewProject": "New project",
+    "zeroBody": "Group your work into a project to see it flow across statuses, track capacity, and get re-entry briefings.",
+    "zeroTitle": "Let's set up your first project",
     "dailyCheckin": {
       "title": "Daily check-in",
       "headline": "A quick look, not a report card.",
@@ -964,6 +986,17 @@
     "readOnly": "Only admins/editors can change this"
   },
   "shortcuts": {
+    "tourCta": "New here? Take the tour",
+    "conceptModesDesc": "Progress mode flows tasks across a board; Deadline mode schedules them against dates.",
+    "conceptModes": "Progress vs Deadline",
+    "conceptReentryDesc": "When you return to an idle project, a card recaps what moved and what's stuck.",
+    "conceptReentry": "Re-entry briefing",
+    "conceptCapacityDesc": "A daily budget of intensity-points by cognitive load, not hours. Deep work costs more.",
+    "conceptCapacity": "Capacity",
+    "conceptTopOfMindDesc": "Tasks you've pinned with ⭐ to anchor today — they lead your /now page.",
+    "conceptTopOfMind": "Top of mind",
+    "conceptsTitle": "Concepts",
+    "helpTitle": "Help & shortcuts",
     "boardOpen": "Open the focused card (board)",
     "boardMove": "Move the held card (board)",
     "boardPickup": "Pick up / drop a card (board)",

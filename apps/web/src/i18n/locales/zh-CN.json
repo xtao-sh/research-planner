@@ -1,4 +1,19 @@
 {
+  "onboard": {
+    "title": "欢迎使用 Research Planner",
+    "subtitle": "这款计划器的设计基于三个理念，了解它们只需片刻。",
+    "belief": {
+      "progressTitle": "进度优先，截止次之",
+      "progressBody": "你在状态流中推进工作——待办、进行中、完成——而不是被截止日期追着跑。进度才是信号。",
+      "progressCta": "创建你的第一个项目",
+      "captureTitle": "先记录，后整理",
+      "captureBody": "灵感突现？先扔进收件箱，稍后再归类——别让想法卡在格式上。",
+      "captureCta": "记录一个想法",
+      "reentryTitle": "回归时给你上下文",
+      "reentryBody": "几天后再回到某个项目时，回归简报会告诉你哪些有进展、哪些卡住了，以及你上次停在哪里。"
+    },
+    "dismiss": "明白了"
+  },
   "common": {
     "save": "保存",
     "delete": "删除",
@@ -603,6 +618,9 @@
     "typeAdmin": "行政"
   },
   "kanban": {
+    "emptyBoardCta": "添加第一个任务",
+    "emptyBoardHint": "卡片位于各状态列中——随着工作推进，把它们向右拖动。",
+    "emptyBoardTitle": "添加你的第一个任务",
     "todo": "待办",
     "doing": "进行中",
     "blocked": "阻塞",
@@ -780,6 +798,10 @@
     "helper": "卡片大小 × 强度，而非分钟估算。拖动调整状态；状态时间自动记录。"
   },
   "now": {
+    "zeroCapture": "记录一个想法",
+    "zeroNewProject": "新建项目",
+    "zeroBody": "把工作归入一个项目，就能看到它在各状态间流转、跟踪精力容量，并获得回归简报。",
+    "zeroTitle": "来创建你的第一个项目",
     "dailyCheckin": {
       "title": "今日一览",
       "headline": "随手看一眼，不是打分。",
@@ -964,6 +986,17 @@
     "readOnly": "只有管理员或编辑者可以切换"
   },
   "shortcuts": {
+    "tourCta": "初次使用？看看引导",
+    "conceptModesDesc": "进展模式让任务在看板上流转；截止模式则按日期为其排期。",
+    "conceptModes": "进展模式与截止模式",
+    "conceptReentryDesc": "当你回到一个搁置的项目时，简报卡会回顾哪些有进展、哪些卡住了。",
+    "conceptReentry": "回归简报",
+    "conceptCapacityDesc": "按认知负荷（而非小时）计的每日强度点预算。深度工作消耗更多。",
+    "conceptCapacity": "精力容量",
+    "conceptTopOfMindDesc": "你用 ⭐ 置顶以锚定今天的任务——它们位于「此刻」页面的最前。",
+    "conceptTopOfMind": "当下焦点",
+    "conceptsTitle": "核心概念",
+    "helpTitle": "帮助与快捷键",
     "boardOpen": "打开聚焦的卡片（看板）",
     "boardMove": "移动手中的卡片（看板）",
     "boardPickup": "拿起／放下卡片（看板）",

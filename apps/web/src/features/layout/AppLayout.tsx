@@ -14,6 +14,7 @@ import { PROJECT_MODES } from '../projects/projectMode';
 import { NavLink } from 'react-router-dom';
 import { QuickCaptureModal } from '../capture/QuickCaptureModal';
 import { ShortcutsHelpModal } from '../help/ShortcutsHelpModal';
+import { WelcomeModal } from '../onboarding/WelcomeModal';
 import { CommandPalette } from '../command/CommandPalette';
 import { useToast } from '../../components/Toast';
 
@@ -51,6 +52,10 @@ export function AppLayout() {
   // URL-derived default so the linkage survives non-/projects/:id routes.
   const [captureProjectId, setCaptureProjectId] = useState<string | null>(null);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  // First-run welcome. Shown once per browser, gated on the
+  // `rp.onboard.seen` localStorage flag. Re-openable from Help via the
+  // `rp:show-welcome` event ("New here? Take the tour").
+  const [showWelcome, setShowWelcome] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [showPalette, setShowPalette] = useState(false);
   // Mobile drawer state — below 900px the sidebar is hidden by default and
@@ -181,6 +186,30 @@ export function AppLayout() {
       window.removeEventListener('rp:open-shortcuts', openShortcuts);
     };
   }, []);
+
+  // First-run gate: show the welcome once if the seen-flag is absent, and
+  // expose `rp:show-welcome` so the Help modal can re-open it on demand.
+  React.useEffect(() => {
+    let seen = true;
+    try {
+      seen = localStorage.getItem('rp.onboard.seen') === '1';
+    } catch {
+      /* localStorage may be blocked — don't nag */
+    }
+    if (!seen) setShowWelcome(true);
+    const reopen = () => setShowWelcome(true);
+    window.addEventListener('rp:show-welcome', reopen);
+    return () => window.removeEventListener('rp:show-welcome', reopen);
+  }, []);
+
+  const closeWelcome = () => {
+    setShowWelcome(false);
+    try {
+      localStorage.setItem('rp.onboard.seen', '1');
+    } catch {
+      /* ignore */
+    }
+  };
 
   const handleSelectPresenceProject = (pid: string) => {
     if (projects.find((p) => p.id === pid)) {
@@ -482,6 +511,8 @@ export function AppLayout() {
         open={showShortcutsHelp}
         onClose={() => setShowShortcutsHelp(false)}
       />
+
+      <WelcomeModal open={showWelcome} onClose={closeWelcome} />
 
       <CommandPalette
         open={showPalette}

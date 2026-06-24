@@ -1019,6 +1019,7 @@ export function ProjectDetailPage() {
                 }
                 onToggleFocus={handleToggleFocus}
                 onReorder={(_status, taskIds) => handleReorder(taskIds)}
+                onAddTask={canWriteActiveWorkspace ? handleNewTask : undefined}
                 wipLimits={
                   Object.keys(wipLimits).length > 0 ? wipLimits : undefined
                 }

@@ -21,6 +21,31 @@ interface ShortcutDef {
   descriptionKey: DescriptionKey;
 }
 
+type ConceptKey =
+  | 'shortcuts.conceptTopOfMind'
+  | 'shortcuts.conceptCapacity'
+  | 'shortcuts.conceptReentry'
+  | 'shortcuts.conceptModes';
+type ConceptDescKey =
+  | 'shortcuts.conceptTopOfMindDesc'
+  | 'shortcuts.conceptCapacityDesc'
+  | 'shortcuts.conceptReentryDesc'
+  | 'shortcuts.conceptModesDesc';
+
+interface ConceptDef {
+  termKey: ConceptKey;
+  descKey: ConceptDescKey;
+}
+
+// One-line definitions of the app's core concepts — the help panel teaches
+// the product, not only keystrokes.
+const CONCEPTS: ConceptDef[] = [
+  { termKey: 'shortcuts.conceptTopOfMind', descKey: 'shortcuts.conceptTopOfMindDesc' },
+  { termKey: 'shortcuts.conceptCapacity', descKey: 'shortcuts.conceptCapacityDesc' },
+  { termKey: 'shortcuts.conceptReentry', descKey: 'shortcuts.conceptReentryDesc' },
+  { termKey: 'shortcuts.conceptModes', descKey: 'shortcuts.conceptModesDesc' },
+];
+
 // Source of truth for what the app actually binds. Keep this in sync with the
 // real keydown handlers (AppLayout, QuickCaptureModal, CommandPalette).
 const SHORTCUTS: ShortcutDef[] = [
@@ -122,7 +147,7 @@ export function ShortcutsHelpModal({ open, onClose }: ShortcutsHelpModalProps) {
         style={{ maxWidth: 460 }}
       >
         <div className="modal-header">
-          <h3>{t('shortcuts.title')}</h3>
+          <h3>{t('shortcuts.helpTitle')}</h3>
           <button
             className="modal-close"
             onClick={onClose}
@@ -161,6 +186,66 @@ export function ShortcutsHelpModal({ open, onClose }: ShortcutsHelpModalProps) {
             </div>
           ))}
         </dl>
+
+        {/* Concepts — the help surface teaches the product, not just keys.
+            One line each for the four mental-model atoms a new researcher
+            needs. Copy-only so it ships in both locales. */}
+        <h4
+          style={{
+            margin: '14px 0 6px',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            color: 'var(--rd-ink-2)',
+          }}
+        >
+          {t('shortcuts.conceptsTitle')}
+        </h4>
+        <dl style={{ margin: 0 }}>
+          {CONCEPTS.map((c) => (
+            <div
+              key={c.termKey}
+              style={{
+                display: 'flex',
+                gap: 12,
+                alignItems: 'baseline',
+                padding: '0.4rem 0',
+                borderBottom: '1px solid var(--rd-line)',
+              }}
+            >
+              <dt
+                style={{
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  flex: '0 0 38%',
+                }}
+              >
+                {t(c.termKey)}
+              </dt>
+              <dd
+                style={{
+                  margin: 0,
+                  fontSize: '0.8125rem',
+                  color: 'var(--rd-ink-3)',
+                  lineHeight: 1.45,
+                }}
+              >
+                {t(c.descKey)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <button
+          type="button"
+          className="rd-btn rd-btn-ghost rd-btn-sm"
+          style={{ marginTop: 14 }}
+          onClick={() => {
+            onClose();
+            window.dispatchEvent(new CustomEvent('rp:show-welcome'));
+          }}
+        >
+          {t('shortcuts.tourCta')}
+        </button>
       </div>
     </div>
   );

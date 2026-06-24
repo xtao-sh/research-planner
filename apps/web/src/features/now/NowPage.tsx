@@ -46,6 +46,8 @@ export function NowPage() {
   const {
     projects,
     projectTasks,
+    projectsLoading,
+    inbox,
     fetchAllWorkspaceTasks,
     refreshProjectTasks,
   } = useAppData();
@@ -265,6 +267,58 @@ export function NowPage() {
       .filter((x) => x.project.id === briefingProject.id)
       .map((x) => x.task);
   }, [allTasks, briefingProject]);
+
+  // True zero-data landing: no projects AND no inbox, once loading settles.
+  // Replace the dispiriting '0 · 0 · 0' dashboard skeleton with one focused
+  // welcome + a clear first step. The greeting (greetKey/dateLine, computed
+  // above) is reused so the band still feels personal.
+  const isZeroData =
+    !projectsLoading && projects.length === 0 && inbox.length === 0;
+
+  if (isZeroData) {
+    return (
+      <>
+        <div className="rd-topbar">
+          <h1>{t('nav.now')}</h1>
+          <span className="rd-meta">{dateLine}</span>
+          <span className="rd-spacer" />
+        </div>
+        <div className="rd-page">
+          <div>
+            <div className="rd-now-greeting">
+              {t(greetKey)} <span className="rd-accent">{dateLine}.</span>
+            </div>
+          </div>
+          <div className="rd-empty-state">
+            <span className="rd-icon" aria-hidden="true">◔</span>
+            <h3>{t('now.zeroTitle')}</h3>
+            <p>{t('now.zeroBody')}</p>
+            <div className="rd-actions">
+              <button
+                type="button"
+                className="rd-btn rd-btn-primary"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent('rp:new-project'))
+                }
+              >
+                {t('now.zeroNewProject')}
+              </button>
+              <button
+                type="button"
+                className="rd-btn rd-btn-ghost"
+                onClick={() =>
+                  window.dispatchEvent(new CustomEvent('rp:open-capture'))
+                }
+              >
+                {t('now.zeroCapture')}{' '}
+                <span className="rd-kbd">⌘⇧N</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

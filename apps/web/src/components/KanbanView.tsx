@@ -41,6 +41,10 @@ interface KanbanViewProps {
    *  exceeded). When the prop is omitted entirely, defaults to a soft cap
    *  of 3 on `doing` to preserve existing behavior. */
   wipLimits?: Partial<Record<Task['status'], number | null | undefined>>;
+  /** Optional CTA for the whole-board empty state. When the board has zero
+   *  tasks across every column, a single first-run empty state replaces the
+   *  five '—' columns; this wires its primary button (e.g. handleNewTask). */
+  onAddTask?: () => void;
 }
 
 const STATUS_LIST: Task['status'][] = ['todo', 'doing', 'blocked', 'review', 'done'];
@@ -52,6 +56,7 @@ export function KanbanView({
   onToggleFocus,
   onReorder,
   wipLimits,
+  onAddTask,
 }: KanbanViewProps) {
   const { t } = useTranslation();
 
@@ -211,6 +216,27 @@ export function KanbanView({
         setOverColumn(null);
       }}
     >
+      {localTasks.length === 0 ? (
+        // Whole-board empty state — one welcoming first-task prompt instead
+        // of five bare '—' columns. Matches the deadline-mode TaskListPanel
+        // empty voice and reuses rd-empty-state (as on /now and inbox).
+        <div className="rd-empty-state">
+          <span className="rd-icon" aria-hidden="true">▦</span>
+          <h3>{t('kanban.emptyBoardTitle')}</h3>
+          <p>{t('kanban.emptyBoardHint')}</p>
+          {onAddTask && (
+            <div className="rd-actions">
+              <button
+                type="button"
+                className="rd-btn rd-btn-primary rd-btn-sm"
+                onClick={onAddTask}
+              >
+                {t('kanban.emptyBoardCta')}
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="rd-flow-board">
         {statusColumns.map((column) => {
           const columnTasks = tasksByStatus.get(column.status) || [];
@@ -268,6 +294,7 @@ export function KanbanView({
           );
         })}
       </div>
+      )}
       {/* DragOverlay — portal-rendered clone of the dragged card. Without
           this the source card gets clipped by the column's bounds when
           the cursor crosses into a neighboring column, so it briefly

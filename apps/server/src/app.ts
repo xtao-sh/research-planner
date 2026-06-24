@@ -7,7 +7,7 @@ import { randomUUID, randomBytes } from 'node:crypto';
 import { z } from 'zod';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { schedule, buildGraph, CycleError, DurationMode } from '@rp/scheduler';
-import type { Dependency, Milestone, Project, Scenario, ScheduleResult, Task, TaskSize } from '@rp/shared';
+import type { Artifact, Dependency, Milestone, Project, Scenario, ScheduleResult, Task, TaskSize } from '@rp/shared';
 import { seed } from './seed';
 import {
   registerAuthPlugin,
@@ -2993,7 +2993,7 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
   app.get('/api/search', async (req, rep) => {
     const q = String((req.query as { q?: unknown })?.q ?? '').trim();
     if (q.length > 200) return rep.code(400).send({ error: 'queryTooLong' });
-    const empty = { query: q, tasks: [], notes: [], projects: [] };
+    const empty = { query: q, tasks: [], notes: [], projects: [], artifacts: [] };
     if (q.length === 0) return empty;
     const userId = req.user!.id;
     const memberships = await prisma.workspaceMember.findMany({
@@ -3005,14 +3005,19 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
 
     // Tag-only mode — when the query starts with '#', skip the title /
     // body / name / description filters and match only against the tag
-    // and label JSON columns. The `#` is stripped before LIKE'ing so
-    // `#literature` matches against the bare word "literature" inside
-    // the JSON-encoded array. This is the path the user uses when they
-    // know they tagged something but can't remember the title.
+    // and label JSON columns. The `#` is stripped before LIKE'ing.
+    // labels/tags are stored as a JSON array string (e.g. ["literature","wip"])
+    // so we wrap the needle in JSON quotes ("literature") to match whole
+    // tags only — `#lit` no longer collides with a `#literature` tag, and
+    // the surrounding quotes pin the match to a full array element. This is
+    // the path the user uses when they know they tagged something but can't
+    // remember the title.
     const isTagMode = q.startsWith('#') && q.length > 1;
     const tagNeedle = isTagMode ? q.slice(1) : q;
+    // Quoted form used for exact whole-tag membership in tag mode.
+    const tagQuoted = `"${tagNeedle}"`;
 
-    const [projects, tasks, noteRows] = await Promise.all([
+    const [projects, tasks, noteRows, artifactRows] = await Promise.all([
       // Projects don't have tags — return empty in tag mode.
       isTagMode
         ? Promise.resolve([] as Array<{ id: string; name: string; type: string | null; description: string | null }>)
@@ -3031,8 +3036,8 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         where: {
           project: { workspaceId: { in: workspaceIds } },
           ...(isTagMode
-            ? { labels: { contains: tagNeedle } }
-            : { title: { contains: q } }),
+            ? { labels: { contains: tagQuoted } }
+            : { OR: [{ title: { contains: q } }, { notes: { contains: q } }] }),
         },
         take: 50,
         select: {
@@ -3049,6 +3054,7 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
           startedAt: true,
           blockedAt: true,
           focusedAt: true,
+          notes: true,
         },
       }),
       prisma.note.findMany({
@@ -3062,7 +3068,7 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
           AND: [
             { OR: [{ projectId: { not: null } }, { createdById: userId }] },
             isTagMode
-              ? { tags: { contains: tagNeedle } }
+              ? { tags: { contains: tagQuoted } }
               : {
                   OR: [
                     { body: { contains: q } },
@@ -3082,6 +3088,39 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
           createdAt: true,
         },
       }),
+      // Artifacts (Sources tab). Match title / url / notes within workspaces
+      // the caller is a member of, exactly like the task/note buckets.
+      // Artifacts have no tags, so they return empty in tag mode.
+      isTagMode
+        ? Promise.resolve(
+            [] as Array<{
+              id: string;
+              projectId: string;
+              kind: string;
+              title: string;
+              url: string | null;
+              notes: string | null;
+            }>,
+          )
+        : prisma.artifact.findMany({
+            where: {
+              project: { workspaceId: { in: workspaceIds } },
+              OR: [
+                { title: { contains: q } },
+                { url: { contains: q } },
+                { notes: { contains: q } },
+              ],
+            },
+            take: 50,
+            select: {
+              id: true,
+              projectId: true,
+              kind: true,
+              title: true,
+              url: true,
+              notes: true,
+            },
+          }),
     ]);
 
     return {
@@ -3107,6 +3146,7 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         startedAt: isoOrUndef(t.startedAt),
         blockedAt: isoOrUndef(t.blockedAt),
         focusedAt: isoOrUndef(t.focusedAt),
+        notes: t.notes ?? undefined,
       })),
       notes: noteRows.map((n) => ({
         id: n.id,
@@ -3114,6 +3154,14 @@ async function buildServer(prisma: PrismaClient): Promise<FastifyInstance> {
         body: n.body,
         tags: parseTags(n.tags),
         createdAt: n.createdAt.toISOString(),
+      })),
+      artifacts: artifactRows.map((a) => ({
+        id: a.id,
+        projectId: a.projectId,
+        kind: a.kind as Artifact['kind'],
+        title: a.title,
+        url: a.url,
+        notes: a.notes,
       })),
     };
   });

@@ -345,9 +345,18 @@ export interface SearchResults {
       // Needed for FocusPin's read-only "is pinned" indicator — toggling
       // happens elsewhere; search only needs to *show* the pin state.
       | 'focusedAt'
+      // Per-task re-entry notes. Indexed by /api/search so a researcher can
+      // find the "tried X, hit wall Y, next try Z" body, not just the title.
+      // The UI renders a truncated snippet to show why the row matched.
+      | 'notes'
     >
   >;
   notes: Array<Pick<Note, 'id' | 'projectId' | 'body' | 'tags' | 'createdAt'>>;
   projects: Array<Pick<Project, 'id' | 'name' | 'type' | 'description'>>;
+  // Project artifacts (Sources tab): matched on title / url / notes within
+  // workspaces the caller is a member of. Capped at 50 server-side.
+  artifacts: Array<
+    Pick<Artifact, 'id' | 'projectId' | 'kind' | 'title' | 'url' | 'notes'>
+  >;
 }
 

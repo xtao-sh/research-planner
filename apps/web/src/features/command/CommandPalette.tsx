@@ -92,6 +92,7 @@ const EMPTY_RESULTS: SearchResults = {
   tasks: [],
   notes: [],
   projects: [],
+  artifacts: [],
 };
 
 export interface CommandPaletteProps {

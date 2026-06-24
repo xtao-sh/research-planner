@@ -41,6 +41,30 @@ describe('GET /api/search', () => {
         tags: ['literature'],
       },
     });
+
+    // A task whose only hit is in its notes body (re-entry context).
+    await ctx.app.inject({
+      method: 'POST',
+      url: '/api/projects/p1/tasks',
+      headers: { ...cookieHeader(sid), 'content-type': 'application/json' },
+      payload: {
+        title: 'Some unrelated title',
+        notes: 'tried approach X, hit the convergence bug, next try Z',
+      },
+    });
+
+    // An artifact whose title/url/notes carry distinctive search terms.
+    await ctx.app.inject({
+      method: 'POST',
+      url: '/api/projects/p1/artifacts',
+      headers: { ...cookieHeader(sid), 'content-type': 'application/json' },
+      payload: {
+        kind: 'link',
+        title: 'Seminal transformer paper',
+        url: 'https://arxiv.org/abs/1706.03762',
+        notes: 'baseline reference for the attention experiments',
+      },
+    });
   });
 
   afterAll(async () => {
@@ -57,9 +81,16 @@ describe('GET /api/search', () => {
       status: res.statusCode,
       body: JSON.parse(res.body) as {
         query: string;
-        tasks: Array<{ id: string; title: string }>;
+        tasks: Array<{ id: string; title: string; notes?: string }>;
         notes: Array<{ id: string; body: string; tags: string[] }>;
         projects: Array<{ id: string; name: string }>;
+        artifacts: Array<{
+          id: string;
+          title: string;
+          url: string | null;
+          notes: string | null;
+          kind: string;
+        }>;
       },
     };
   }
@@ -70,6 +101,47 @@ describe('GET /api/search', () => {
     expect(r.body.tasks).toEqual([]);
     expect(r.body.notes).toEqual([]);
     expect(r.body.projects).toEqual([]);
+    expect(r.body.artifacts).toEqual([]);
+  });
+
+  it('matches a task by its notes body (not just the title)', async () => {
+    const r = await search('convergence bug');
+    expect(r.status).toBe(200);
+    const hit = r.body.tasks.find((t) => t.title === 'Some unrelated title');
+    expect(hit).toBeDefined();
+    expect(hit?.notes).toContain('convergence bug');
+  });
+
+  it('matches an artifact by title', async () => {
+    const r = await search('transformer');
+    expect(r.status).toBe(200);
+    expect(
+      r.body.artifacts.some((a) => a.title === 'Seminal transformer paper'),
+    ).toBe(true);
+  });
+
+  it('matches an artifact by url and notes', async () => {
+    const byUrl = await search('1706.03762');
+    expect(byUrl.body.artifacts.some((a) => a.url === 'https://arxiv.org/abs/1706.03762')).toBe(true);
+    const byNotes = await search('attention experiments');
+    expect(byNotes.body.artifacts.some((a) => a.title === 'Seminal transformer paper')).toBe(true);
+  });
+
+  it('#tag mode returns no artifacts (artifacts have no tags)', async () => {
+    const r = await search('#literature');
+    expect(r.body.artifacts).toEqual([]);
+  });
+
+  it('#tag mode matches whole tags only — #lit does not match #literature', async () => {
+    const partial = await search('#lit');
+    // A prefix of an existing tag must not match the full tag.
+    expect(
+      partial.body.tasks.some((t) => t.title === 'Plain title — unrelated body'),
+    ).toBe(false);
+    expect(partial.body.notes.some((n) => n.tags.includes('literature'))).toBe(false);
+    // The exact tag still matches.
+    const exact = await search('#literature');
+    expect(exact.body.notes.some((n) => n.tags.includes('literature'))).toBe(true);
   });
 
   it('substring query matches task titles', async () => {

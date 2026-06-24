@@ -712,6 +712,7 @@
     "observationCapacity": "容量是信号，不是分数。低强度的一天用来恢复。"
   },
   "search": {
+  "groupArtifacts": "产出",
     "panel": "🔍 搜索",
     "placeholder": "搜索任务、笔记、项目…",
     "scopeAll": "全部 ({{count}})",

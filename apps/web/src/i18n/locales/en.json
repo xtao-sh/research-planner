@@ -712,6 +712,7 @@
     "stillBlocked": "still blocked"
   },
   "search": {
+  "groupArtifacts": "Sources",
     "panel": "🔍 Search",
     "placeholder": "Search tasks, notes, projects…",
     "scopeAll": "All ({{count}})",

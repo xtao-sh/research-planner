@@ -100,7 +100,36 @@ const EMPTY_RESULTS: SearchResults = {
   tasks: [],
   notes: [],
   projects: [],
+  artifacts: [],
 };
+
+// Emoji per artifact kind, mirroring the option labels in the Artifacts tab
+// (artifact.option*). Used to give Sources rows a quick type cue.
+const ARTIFACT_KIND_ICON: Record<string, string> = {
+  link: '🔗',
+  file: '📎',
+  code: '💻',
+  data: '📊',
+  note: '📝',
+};
+
+// Static i18n keys per kind — literal keys so typed-i18next t() accepts them
+// (a `t(`artifact.type${cap}`)` template collapses to `artifact.type${string}`
+// and fails strict key typing). Mirrors ProjectArtifactsTab's kindLabel map.
+const ARTIFACT_KIND_LABEL_KEY = {
+  link: 'artifact.typeLink',
+  file: 'artifact.typeFile',
+  code: 'artifact.typeCode',
+  data: 'artifact.typeData',
+  note: 'artifact.typeNote',
+} as const;
+
+// Trim a notes/body field to a short snippet for result rows. Collapses
+// whitespace so multi-line task notes don't blow up the row height.
+function snippet(text: string, max = 140): string {
+  const collapsed = text.replace(/\s+/g, ' ').trim();
+  return collapsed.length > max ? collapsed.slice(0, max) + '…' : collapsed;
+}
 
 /**
  * Cross-entity search route. Calls GET /api/search?q=… on every debounced
@@ -183,10 +212,16 @@ export function SearchPage() {
   const noteMatches = projectFilter
     ? results.notes.filter((n) => n.projectId === projectFilter)
     : results.notes;
+  const artifactMatches = projectFilter
+    ? results.artifacts.filter((a) => a.projectId === projectFilter)
+    : results.artifacts;
   const projectMatches = projectFilter ? [] : results.projects;
 
   const totalMatches =
-    taskMatches.length + noteMatches.length + projectMatches.length;
+    taskMatches.length +
+    noteMatches.length +
+    artifactMatches.length +
+    projectMatches.length;
   const hasResults = totalMatches > 0;
 
   // Per-project hit counts for the filter chip row. Counts come from
@@ -200,8 +235,11 @@ export function SearchPage() {
       if (!n.projectId) continue;
       counts.set(n.projectId, (counts.get(n.projectId) ?? 0) + 1);
     }
+    for (const a of results.artifacts) {
+      counts.set(a.projectId, (counts.get(a.projectId) ?? 0) + 1);
+    }
     return counts;
-  }, [results.tasks, results.notes]);
+  }, [results.tasks, results.notes, results.artifacts]);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -345,6 +383,14 @@ export function SearchPage() {
                       <div className="rd-title">
                         {highlightMatches(task.title, highlightQuery)}
                       </div>
+                      {task.notes && task.notes.trim() && (
+                        <div
+                          className="rd-body"
+                          style={{ marginTop: 2, color: 'var(--rd-ink-2)' }}
+                        >
+                          {highlightMatches(snippet(task.notes), highlightQuery)}
+                        </div>
+                      )}
                       <div className="rd-meta-line">
                         {project && (
                           <>
@@ -425,6 +471,69 @@ export function SearchPage() {
                     </div>
                     <div className="rd-body">
                       {renderBodyWithHashtagsAndHighlight(note.body, highlightQuery)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {artifactMatches.length > 0 && (
+          <div>
+            <div className="rd-section-eyebrow">{t('search.groupArtifacts')}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {artifactMatches.map((artifact) => {
+                const project = projectById.get(artifact.projectId);
+                // Click-through lands on the owning project's Artifacts tab.
+                const goToArtifact = () =>
+                  navigate(`/projects/${artifact.projectId}?tab=artifacts`);
+                return (
+                  <div
+                    key={artifact.id}
+                    className="rd-task-row"
+                    role="button"
+                    tabIndex={0}
+                    onClick={goToArtifact}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        goToArtifact();
+                      }
+                    }}
+                  >
+                    <span aria-hidden="true" style={{ fontSize: '1.1rem' }}>
+                      {ARTIFACT_KIND_ICON[artifact.kind] ?? '🗂️'}
+                    </span>
+                    <div>
+                      <div className="rd-title">
+                        {highlightMatches(artifact.title, highlightQuery)}
+                      </div>
+                      {artifact.notes && artifact.notes.trim() && (
+                        <div
+                          className="rd-body"
+                          style={{ marginTop: 2, color: 'var(--rd-ink-2)' }}
+                        >
+                          {highlightMatches(snippet(artifact.notes), highlightQuery)}
+                        </div>
+                      )}
+                      <div className="rd-meta-line">
+                        {project && (
+                          <>
+                            <span className="rd-project-tag">{project.name}</span>
+                            <span className="rd-sep">·</span>
+                          </>
+                        )}
+                        <span>{t(ARTIFACT_KIND_LABEL_KEY[artifact.kind])}</span>
+                        {artifact.url && (
+                          <>
+                            <span className="rd-sep">·</span>
+                            <span className="rd-meta">
+                              {highlightMatches(artifact.url, highlightQuery)}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

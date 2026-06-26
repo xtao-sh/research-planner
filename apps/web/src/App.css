@@ -1184,7 +1184,7 @@ h4 {
 .form-group label {
   display: block;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--rd-ink);
   margin-bottom: 0.5rem;
   font-size: 0.875rem;
 }
@@ -1198,11 +1198,11 @@ h4 {
   width: 100%;
   padding: 0.5rem 0.25rem;
   border: 0;
-  border-bottom: 1px solid var(--ink-300);
+  border-bottom: 1px solid var(--rd-line-strong);
   border-radius: 0;
   font-family: var(--font-sans);
-  font-size: var(--fs-sm);
-  color: var(--ink-900);
+  font-size: var(--rd-text-md);
+  color: var(--rd-ink);
   transition: border-color var(--transition-fast),
               background var(--transition-fast);
   background: transparent;
@@ -1213,7 +1213,7 @@ h4 {
 .form-group textarea:focus {
   outline: none;
   border-bottom: 2px solid var(--accent);
-  background: var(--paper-2);
+  background: var(--rd-surface-2);
   box-shadow: none;
 }
 

@@ -1,10 +1,19 @@
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 export function LanguageSwitcher() {
   const { i18n, t } = useTranslation();
-  const current = (i18n.resolvedLanguage || i18n.language || 'zh-CN').toLowerCase();
+
+  const current = (
+    i18n.resolvedLanguage ||
+    i18n.language ||
+    'es'
+  ).toLowerCase();
+
   const isZh = current.startsWith('zh');
+  const isEn = current.startsWith('en');
+  const isEs = current.startsWith('es');
 
   const baseStyle: React.CSSProperties = {
     background: 'transparent',
@@ -14,6 +23,7 @@ export function LanguageSwitcher() {
     cursor: 'pointer',
     fontSize: '0.85rem',
   };
+
   const activeStyle: React.CSSProperties = {
     ...baseStyle,
     fontWeight: 700,
@@ -28,20 +38,31 @@ export function LanguageSwitcher() {
     >
       <button
         type="button"
+        onClick={() => i18n.changeLanguage('es')}
+        style={isEs ? activeStyle : baseStyle}
+        aria-pressed={isEs}
+      >
+        ES
+      </button>
+
+      <button
+        type="button"
+        onClick={() => i18n.changeLanguage('en')}
+        style={isEn ? activeStyle : baseStyle}
+        aria-pressed={isEn}
+      >
+        EN
+      </button>
+
+      <button
+        type="button"
         onClick={() => i18n.changeLanguage('zh-CN')}
         style={isZh ? activeStyle : baseStyle}
         aria-pressed={isZh}
       >
         中
       </button>
-      <button
-        type="button"
-        onClick={() => i18n.changeLanguage('en')}
-        style={!isZh ? activeStyle : baseStyle}
-        aria-pressed={!isZh}
-      >
-        EN
-      </button>
     </div>
   );
 }
+
